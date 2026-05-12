@@ -97,7 +97,7 @@ Below is a high-level architecture diagram describing a typical Ansible setup: t
 ```mermaid
 flowchart LR
   subgraph ControlNode[Control node]
-    C[Ansible control node<br/>(playbooks, roles, collections)]
+    C["Ansible control node\n(playbooks, roles, collections)"]
   end
 
   subgraph Inventory[Inventory]
