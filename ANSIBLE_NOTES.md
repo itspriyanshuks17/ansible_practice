@@ -116,8 +116,8 @@ flowchart LR
   end
 
   subgraph Cloud[Cloud Providers]
-    CloudAPI[Cloud APIs (AWS/Azure/GCP)]
-    VM[Provisioned VMs / Instances]
+    CloudAPI["Cloud APIs (AWS/Azure/GCP)"]
+    VM["Provisioned VMs / Instances"]
   end
 
   subgraph ExecEnv[Execution Envs]
