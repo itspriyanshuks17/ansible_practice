@@ -56,6 +56,8 @@ Generate a key pair for EC2 access:
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-ec2-key
 ```
 
+> Important: when prompted for a passphrase, press Enter and leave it empty for this lab setup.
+
 This creates:
 
 - Private key: `~/.ssh/ansible-ec2-key`
