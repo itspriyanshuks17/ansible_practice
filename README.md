@@ -9,7 +9,8 @@ Getting started
 
 1. Read the installation steps in [INSTALLATION.md](INSTALLATION.md) for your OS.
 2. Open `ANSIBLE_NOTES.md` for a quick conceptual overview and architecture diagram.
-3. Try a local playbook using the examples in `ANSIBLE_NOTES.md`.
+3. Review the AWS EC2 lab setup in [ANSIBLE_NOTES.md](ANSIBLE_NOTES.md) if you want a 1 control node + 2 worker node example using `ssh-keygen`.
+4. Try a local playbook using the examples in `ANSIBLE_NOTES.md`.
 
 Contributing
 
