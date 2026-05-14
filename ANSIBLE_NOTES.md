@@ -92,7 +92,34 @@ Suggested naming:
 - `worker-1`
 - `worker-2`
 
-### 4. Verify SSH access from the control node
+### 4. Add the public key to each worker node
+
+On each worker node, add the public key to `~/.ssh/authorized_keys` so the control node can log in with the private key.
+
+1. Connect to the worker node using the EC2 key pair or the default login user.
+2. Make sure the SSH directory exists:
+
+```
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+```
+
+3. Open the authorized keys file with nano:
+
+```
+nano ~/.ssh/authorized_keys
+```
+
+4. Paste the contents of `ansible-ec2-key.pub` into the file, then save and exit.
+5. Lock down the file permissions:
+
+```
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### 5. Verify SSH access from the control node
+
+From the control node, confirm that you can reach both worker nodes with the private key and log in successfully.
 
 Copy the private key to the control node only if you generated it on your laptop and need it there for testing.
 
@@ -104,7 +131,9 @@ ssh -i ~/.ssh/ansible-ec2-key ec2-user@<worker-2-private-ip>
 
 If you use Ubuntu images, the default user is usually `ubuntu`. For Amazon Linux, it is usually `ec2-user`.
 
-### 5. Create the inventory on the control node
+If the connection succeeds, you should see the remote shell prompt for each worker node. If it fails, recheck the key file path, permissions, security groups, and the login user.
+
+### 6. Create the inventory on the control node
 
 Use the workers' private IPs in an inventory file:
 
@@ -117,7 +146,7 @@ worker-2 ansible_host=<worker-2-private-ip> ansible_user=ec2-user
 ansible_ssh_private_key_file=~/.ssh/ansible-ec2-key
 ```
 
-### 6. Test the architecture
+### 7. Test the architecture
 
 Run a ping test from the control node:
 
@@ -126,6 +155,32 @@ ansible -i inventory workers -m ping
 ```
 
 If the SSH key, security groups, and usernames are correct, both worker nodes should respond successfully.
+
+### AWS EC2 architecture diagram
+
+```mermaid
+flowchart LR
+  Laptop["Your laptop
+ssh-keygen"]
+  KeyPair["SSH key pair
+private key + public key"]
+
+  subgraph AWS[AWS VPC / EC2]
+    Control["Control node
+Ansible installed"]
+    Worker1["Worker node 1
+managed host"]
+    Worker2["Worker node 2
+managed host"]
+  end
+
+  Laptop --> KeyPair
+  KeyPair --> Control
+  Control -->|SSH using private key| Worker1
+  Control -->|SSH using private key| Worker2
+  Control -->|ansible / ansible-playbook| Worker1
+  Control -->|ansible / ansible-playbook| Worker2
+```
 
 ## Quick example
 
