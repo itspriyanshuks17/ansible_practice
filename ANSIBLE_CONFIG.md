@@ -48,6 +48,21 @@ become_ask_pass = False
 
 `hosts.ini` tells Ansible which machines to manage and how to connect to them.
 
+In your current setup, the inventory groups the two worker nodes under a `servers` group and uses the Ubuntu login user with a private key from the control node.
+
+Current example:
+
+```
+[servers]
+worker-node-1 ansible_host=35.154.19.150 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/ansible-master-key
+worker-node-2 ansible_host=3.110.217.103 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/ansible-master-key
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o IdentitiesOnly=yes -o StrictHostKeyChecking=no'
+ansible_host_keychecking=false
+```
+
 Example:
 
 ```
@@ -67,6 +82,21 @@ What this means:
 - `ansible_host`: real IP or DNS name of the host.
 - `ansible_user`: SSH username Ansible should use.
 - `[workers:vars]`: variables shared by all hosts in the `workers` group.
+
+What your current file means:
+
+- `[servers]`: creates a host group named `servers`.
+- `worker-node-1` and `worker-node-2`: friendly names you can use in playbooks instead of raw IPs.
+- `ansible_host=35.154.19.150` and `ansible_host=3.110.217.103`: the public IP addresses of the EC2 instances.
+- `ansible_user=ubuntu`: tells Ansible to SSH in as the Ubuntu default user.
+- `ansible_ssh_private_key_file=/home/ubuntu/ansible-master-key`: the SSH private key Ansible should use.
+- `[all:vars]`: applies the listed variables to every host in the inventory.
+- `ansible_python_interpreter=/usr/bin/python3`: tells Ansible which Python binary to use on the remote host.
+- `ansible_ssh_common_args='-o IdentitiesOnly=yes -o StrictHostKeyChecking=no'`: passes extra SSH options so SSH uses only the specified key and does not stop for host-key prompts in a lab environment.
+
+Important note:
+
+- `ansible_host_keychecking=false` is not the usual Ansible setting name. For host key checking, use `host_key_checking = False` in `ansible.cfg`, or rely on the `ansible_ssh_common_args` SSH option above for a lab-only setup.
 
 Create the file in your project root:
 
