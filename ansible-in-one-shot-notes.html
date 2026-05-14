@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ansible In One Shot — Complete Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #252a38;
+    --accent: #e8441a;
+    --accent2: #f5a623;
+    --accent3: #3dd6f5;
+    --green: #3dffa0;
+    --text: #d4d8e8;
+    --muted: #6b7290;
+    --heading: #f0f2ff;
+    --code-bg: #0a0c12;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .hero {
+    position: relative;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(232,68,26,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 10%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(61,214,245,0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,68,26,0.15);
+    border: 1px solid rgba(232,68,26,0.4);
+    color: var(--accent);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    color: var(--heading);
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p {
+    color: var(--muted);
+    max-width: 560px;
+    font-size: 14px;
+  }
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .meta-item .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+  .meta-item .dot.orange { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+  .meta-item .dot.blue { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 200px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 24px;
+    margin-bottom: 12px;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 24px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar a:hover, .sidebar a.active {
+    color: var(--heading);
+    background: rgba(255,255,255,0.04);
+    border-left-color: var(--accent);
+  }
+  .sidebar a .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    min-width: 20px;
+  }
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 24px;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    padding: 40px 48px;
+    max-width: 900px;
+  }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 64px;
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(232,68,26,0.12);
+    border: 1px solid rgba(232,68,26,0.3);
+    padding: 3px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .section-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--heading);
+  }
+  .level-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .level-badge.beginner { background: rgba(61,255,160,0.12); color: var(--green); border: 1px solid rgba(61,255,160,0.25); }
+  .level-badge.intermediate { background: rgba(245,166,35,0.12); color: var(--accent2); border: 1px solid rgba(245,166,35,0.25); }
+  .level-badge.advanced { background: rgba(61,214,245,0.12); color: var(--accent3); border: 1px solid rgba(61,214,245,0.25); }
+
+  /* CONTENT ELEMENTS */
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--heading);
+    margin: 28px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3::before {
+    content: '▸';
+    color: var(--accent);
+    font-size: 12px;
+  }
+
+  p { margin-bottom: 12px; color: var(--text); }
+
+  /* CODE BLOCKS */
+  .code-block {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .code-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .code-label .lang { color: var(--accent3); font-weight: 700; }
+  pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c8d3f5;
+  }
+  .kw { color: #f5a623; }
+  .str { color: #3dffa0; }
+  .cm { color: #4a5270; font-style: italic; }
+  .fn { color: #3dd6f5; }
+  .var2 { color: #c99bf5; }
+  .num { color: #ff9d8a; }
+
+  /* INFO BOXES */
+  .box {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-left: 3px solid;
+    font-size: 13.5px;
+  }
+  .box-tip { background: rgba(61,255,160,0.06); border-color: var(--green); }
+  .box-warn { background: rgba(245,166,35,0.07); border-color: var(--accent2); }
+  .box-info { background: rgba(61,214,245,0.06); border-color: var(--accent3); }
+  .box-danger { background: rgba(232,68,26,0.07); border-color: var(--accent); }
+  .box-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .box-tip .box-title { color: var(--green); }
+  .box-warn .box-title { color: var(--accent2); }
+  .box-info .box-title { color: var(--accent3); }
+  .box-danger .box-title { color: var(--accent); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--heading);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td code, p code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* LIST */
+  ul, ol {
+    padding-left: 20px;
+    margin-bottom: 14px;
+  }
+  li { margin-bottom: 6px; color: var(--text); font-size: 14px; }
+  li strong { color: var(--heading); }
+
+  /* CHAPTER CARD */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card-icon { font-size: 22px; margin-bottom: 8px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 4px; }
+  .card-desc { font-size: 11px; color: var(--muted); }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  /* COMPARISON */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .compare-col {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .compare-col h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .compare-col.left h4 { color: var(--accent); }
+  .compare-col.right h4 { color: var(--accent3); }
+  .compare-col ul { padding-left: 16px; }
+  .compare-col li { font-size: 12.5px; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  footer a { color: var(--accent3); text-decoration: none; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    main { padding: 24px 20px; }
+    .hero { padding: 40px 20px; }
+    .compare { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">📺 Video Notes</div>
+  <h1>Ansible <span>In One Shot</span></h1>
+  <p>Production-Ready DevOps with Terraform Integration — Complete notes from TrainWithShubham's comprehensive Ansible course, beginner to advanced.</p>
+  <div class="meta-row">
+    <div class="meta-item"><span class="dot"></span> 6 Core Modules</div>
+    <div class="meta-item"><span class="dot orange"></span> Terraform Integration</div>
+    <div class="meta-item"><span class="dot blue"></span> AWS EC2 + Multi-OS Labs</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Modules</div>
+    <a href="#intro"><span class="num">00</span> Introduction</a>
+    <a href="#basics"><span class="num">01</span> Basics & Architecture</a>
+    <a href="#inventory"><span class="num">02</span> Inventory</a>
+    <a href="#adhoc"><span class="num">03</span> Ad-Hoc Commands</a>
+    <a href="#playbooks"><span class="num">04</span> Playbooks</a>
+    <a href="#variables"><span class="num">05</span> Variables</a>
+    <a href="#templates"><span class="num">06</span> Templates (Jinja2)</a>
+    <a href="#loops"><span class="num">07</span> Loops & Conditionals</a>
+    <a href="#roles"><span class="num">08</span> Roles</a>
+    <a href="#vault"><span class="num">09</span> Ansible Vault</a>
+    <a href="#handlers"><span class="num">10</span> Handlers & Tags</a>
+    <a href="#terraform"><span class="num">11</span> Terraform Integration</a>
+    <a href="#production"><span class="num">12</span> Production Best Practices</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Quick Ref</div>
+    <a href="#cheatsheet"><span class="num">★</span> Cheatsheet</a>
+  </nav>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- 00 INTRO -->
+    <section class="section" id="intro">
+      <div class="section-header">
+        <span class="section-num">MODULE 00</span>
+        <span class="section-title">Introduction & Course Overview</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>This course covers Ansible end-to-end — from its architecture and core concepts to production patterns. Real AWS infrastructure (Ubuntu, RHEL, Amazon Linux) is provisioned via Terraform so you practice on actual cloud nodes.</p>
+
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">📦</div><div class="card-title">Module 1</div><div class="card-desc">Basics, install, architecture</div></div>
+        <div class="card"><div class="card-icon">📋</div><div class="card-title">Module 2</div><div class="card-desc">Variables & Facts</div></div>
+        <div class="card"><div class="card-icon">🧩</div><div class="card-title">Module 3</div><div class="card-desc">Templates (Jinja2)</div></div>
+        <div class="card"><div class="card-icon">🔁</div><div class="card-title">Module 4</div><div class="card-desc">Loops & Conditionals</div></div>
+        <div class="card"><div class="card-icon">🎭</div><div class="card-title">Module 5</div><div class="card-desc">Roles & Galaxy</div></div>
+        <div class="card"><div class="card-icon">🔒</div><div class="card-title">Module 6</div><div class="card-desc">Vault + Terraform</div></div>
+      </div>
+
+      <div class="box box-info">
+        <div class="box-title">📎 Course Repo</div>
+        github.com/TrainWithShubham/ansible-in-one-shot
+      </div>
+    </section>
+
+    <!-- 01 BASICS -->
+    <section class="section" id="basics">
+      <div class="section-header">
+        <span class="section-num">MODULE 01</span>
+        <span class="section-title">Basics & Architecture</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <h3>What is Ansible?</h3>
+      <p>Ansible is an open-source, agentless IT automation engine built by Red Hat. It automates configuration management, application deployment, orchestration, and provisioning using simple YAML files called <strong>Playbooks</strong>. No agent software needs to run on managed nodes — it communicates over SSH (Linux) or WinRM (Windows).</p>
+
+      <div class="compare">
+        <div class="compare-col left">
+          <h4>Terraform</h4>
+          <ul>
+            <li>Infrastructure provisioning</li>
+            <li>Declarative (desired state)</li>
+            <li>Manages cloud resources (EC2, VPC…)</li>
+            <li>Stateful (tracks tfstate)</li>
+          </ul>
+        </div>
+        <div class="compare-col right">
+          <h4>Ansible</h4>
+          <ul>
+            <li>Configuration management</li>
+            <li>Procedural + idempotent</li>
+            <li>Configures software on servers</li>
+            <li>Agentless (SSH only)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Architecture</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Component</th><th>Description</th></tr>
+          <tr><td><strong>Control Node</strong></td><td>Machine where Ansible is installed and commands run from</td></tr>
+          <tr><td><strong>Managed Nodes</strong></td><td>Remote hosts that Ansible configures (no Ansible install needed)</td></tr>
+          <tr><td><strong>Inventory</strong></td><td>List of managed nodes (IP/hostnames), static or dynamic</td></tr>
+          <tr><td><strong>Playbook</strong></td><td>YAML file defining ordered list of tasks to run</td></tr>
+          <tr><td><strong>Module</strong></td><td>Unit of code Ansible sends to managed nodes (e.g. <code>apt</code>, <code>copy</code>)</td></tr>
+          <tr><td><strong>Task</strong></td><td>Single action calling a module with arguments</td></tr>
+          <tr><td><strong>Role</strong></td><td>Reusable, packaged set of tasks, vars, templates</td></tr>
+          <tr><td><strong>Handler</strong></td><td>Task triggered only when notified (e.g. restart nginx)</td></tr>
+          <tr><td><strong>Fact</strong></td><td>System info auto-gathered from managed nodes</td></tr>
+          <tr><td><strong>Vault</strong></td><td>Encrypted storage for sensitive variables</td></tr>
+        </table>
+      </div>
+
+      <h3>Installation</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Ubuntu/Debian Control Node</span></div>
+        <pre><span class="cm"># Update packages</span>
+sudo apt update && sudo apt upgrade -y
+
+<span class="cm"># Install Ansible</span>
+sudo apt install ansible -y
+
+<span class="cm"># Verify</span>
+ansible --version
+
+<span class="cm"># Alternative: pip install</span>
+pip3 install ansible</pre>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 Key Concept: Idempotency</div>
+        Running the same Ansible playbook multiple times produces the same result — it won't reinstall what's already installed or recreate what already exists. This is a core design principle.
+      </div>
+    </section>
+
+    <!-- 02 INVENTORY -->
+    <section class="section" id="inventory">
+      <div class="section-header">
+        <span class="section-num">MODULE 02</span>
+        <span class="section-title">Inventory</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>The inventory file tells Ansible which hosts to manage and how to connect to them. Default location: <code>/etc/ansible/hosts</code></p>
+
+      <h3>Static Inventory (INI format)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">INI</span><span>hosts</span></div>
+        <pre><span class="cm"># Ungrouped host</span>
+192.168.1.10
+
+<span class="cm"># Webservers group</span>
+[webservers]
+web1 ansible_host=54.12.34.56 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+web2 ansible_host=54.12.34.57 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+<span class="cm"># DB servers group</span>
+[dbservers]
+db1 ansible_host=54.12.34.58 ansible_user=ec2-user
+
+<span class="cm"># Group of groups</span>
+[all_servers:children]
+webservers
+dbservers
+
+<span class="cm"># Group variables</span>
+[webservers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/ansible_key</pre>
+      </div>
+
+      <h3>Static Inventory (YAML format)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>inventory.yml</span></div>
+        <pre><span class="kw">all:</span>
+  <span class="kw">children:</span>
+    <span class="kw">webservers:</span>
+      <span class="kw">hosts:</span>
+        <span class="kw">web1:</span>
+          ansible_host: <span class="str">54.12.34.56</span>
+          ansible_user: <span class="str">ubuntu</span>
+          ansible_ssh_private_key_file: <span class="str">~/.ssh/id_rsa</span>
+    <span class="kw">dbservers:</span>
+      <span class="kw">hosts:</span>
+        <span class="kw">db1:</span>
+          ansible_host: <span class="str">54.12.34.58</span>
+          ansible_user: <span class="str">ec2-user</span></pre>
+      </div>
+
+      <h3>Important Inventory Variables</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Variable</th><th>Purpose</th></tr>
+          <tr><td><code>ansible_host</code></td><td>IP or hostname of the target node</td></tr>
+          <tr><td><code>ansible_user</code></td><td>SSH username (ubuntu, ec2-user, root…)</td></tr>
+          <tr><td><code>ansible_port</code></td><td>SSH port (default 22)</td></tr>
+          <tr><td><code>ansible_ssh_private_key_file</code></td><td>Path to private key file</td></tr>
+          <tr><td><code>ansible_become</code></td><td>Enable privilege escalation (sudo)</td></tr>
+          <tr><td><code>ansible_become_user</code></td><td>User to escalate to (default: root)</td></tr>
+          <tr><td><code>ansible_python_interpreter</code></td><td>Python path on remote node</td></tr>
+          <tr><td><code>ansible_connection</code></td><td>Connection type (ssh, local, winrm)</td></tr>
+        </table>
+      </div>
+
+      <h3>Testing Connectivity</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Ping all hosts</span>
+ansible all -i inventory.ini -m ping
+
+<span class="cm"># Ping specific group</span>
+ansible webservers -i inventory.ini -m ping
+
+<span class="cm"># With SSH key</span>
+ansible all -i inventory.ini -m ping --private-key=~/.ssh/id_rsa</pre>
+      </div>
+    </section>
+
+    <!-- 03 AD-HOC -->
+    <section class="section" id="adhoc">
+      <div class="section-header">
+        <span class="section-num">MODULE 03</span>
+        <span class="section-title">Ad-Hoc Commands</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>Ad-hoc commands run a single module on hosts without writing a playbook. Perfect for quick one-off tasks.</p>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Syntax</span></div>
+        <pre>ansible [pattern] -i [inventory] -m [module] -a "[arguments]" [options]</pre>
+      </div>
+
+      <h3>Common Examples</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Ad-Hoc Commands</span></div>
+        <pre><span class="cm"># Ping all hosts</span>
+ansible all -m ping
+
+<span class="cm"># Run shell command</span>
+ansible webservers -m shell -a "uptime"
+ansible webservers -m command -a "df -h"
+
+<span class="cm"># Install a package (Ubuntu)</span>
+ansible webservers -m apt -a "name=nginx state=present" -b
+
+<span class="cm"># Install a package (RHEL/Amazon Linux)</span>
+ansible dbservers -m yum -a "name=httpd state=present" -b
+
+<span class="cm"># Copy a file</span>
+ansible all -m copy -a "src=/tmp/app.conf dest=/etc/app.conf"
+
+<span class="cm"># Gather facts about hosts</span>
+ansible web1 -m setup
+
+<span class="cm"># Reboot servers</span>
+ansible all -m reboot -b
+
+<span class="cm"># Check free memory</span>
+ansible all -m shell -a "free -m"</pre>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Flag</th><th>Meaning</th></tr>
+          <tr><td><code>-m</code></td><td>Module name</td></tr>
+          <tr><td><code>-a</code></td><td>Module arguments</td></tr>
+          <tr><td><code>-i</code></td><td>Inventory file path</td></tr>
+          <tr><td><code>-b</code></td><td>Become (sudo)</td></tr>
+          <tr><td><code>-u</code></td><td>Remote user</td></tr>
+          <tr><td><code>--private-key</code></td><td>SSH private key path</td></tr>
+          <tr><td><code>-v / -vvv</code></td><td>Verbosity (increase for debug)</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 04 PLAYBOOKS -->
+    <section class="section" id="playbooks">
+      <div class="section-header">
+        <span class="section-num">MODULE 04</span>
+        <span class="section-title">Playbooks</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>Playbooks are YAML files that define a series of plays. Each play maps a group of hosts to a set of tasks. This is Ansible's core automation mechanism.</p>
+
+      <h3>Anatomy of a Playbook</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>install-nginx.yml</span></div>
+        <pre><span class="cm">---
+# A playbook is a list of plays</span>
+- <span class="kw">name:</span> <span class="str">Install and start Nginx</span>          <span class="cm"># Play name</span>
+  <span class="kw">hosts:</span> webservers                         <span class="cm"># Target group/host</span>
+  <span class="kw">become:</span> <span class="num">true</span>                              <span class="cm"># Run as sudo</span>
+  <span class="kw">gather_facts:</span> <span class="num">true</span>                        <span class="cm"># Collect system info</span>
+
+  <span class="kw">tasks:</span>                                     <span class="cm"># List of tasks</span>
+
+    - <span class="kw">name:</span> <span class="str">Update apt cache</span>
+      <span class="kw">apt:</span>
+        <span class="kw">update_cache:</span> <span class="num">yes</span>
+
+    - <span class="kw">name:</span> <span class="str">Install nginx</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> present                        <span class="cm"># present | absent | latest</span>
+
+    - <span class="kw">name:</span> <span class="str">Start and enable nginx service</span>
+      <span class="kw">service:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> started
+        <span class="kw">enabled:</span> <span class="num">yes</span>
+
+    - <span class="kw">name:</span> <span class="str">Copy config file</span>
+      <span class="kw">copy:</span>
+        <span class="kw">src:</span> <span class="str">files/nginx.conf</span>
+        <span class="kw">dest:</span> <span class="str">/etc/nginx/nginx.conf</span>
+        <span class="kw">owner:</span> root
+        <span class="kw">group:</span> root
+        <span class="kw">mode:</span> <span class="str">'0644'</span>
+      <span class="kw">notify:</span> Restart Nginx                   <span class="cm"># Trigger handler</span>
+
+  <span class="kw">handlers:</span>
+    - <span class="kw">name:</span> <span class="str">Restart Nginx</span>
+      <span class="kw">service:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> restarted</pre>
+      </div>
+
+      <h3>Running Playbooks</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Basic run</span>
+ansible-playbook -i inventory.ini playbook.yml
+
+<span class="cm"># Dry run (check mode — no changes)</span>
+ansible-playbook -i inventory.ini playbook.yml --check
+
+<span class="cm"># Run with verbose output</span>
+ansible-playbook -i inventory.ini playbook.yml -v
+
+<span class="cm"># Limit to specific hosts</span>
+ansible-playbook -i inventory.ini playbook.yml --limit web1
+
+<span class="cm"># Run specific tags</span>
+ansible-playbook -i inventory.ini playbook.yml --tags install
+
+<span class="cm"># Skip specific tags</span>
+ansible-playbook -i inventory.ini playbook.yml --skip-tags debug</pre>
+      </div>
+
+      <h3>Common Modules Reference</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Module</th><th>Purpose</th><th>Key Args</th></tr>
+          <tr><td><code>apt</code></td><td>Manage packages (Debian)</td><td>name, state, update_cache</td></tr>
+          <tr><td><code>yum / dnf</code></td><td>Manage packages (RHEL)</td><td>name, state</td></tr>
+          <tr><td><code>service</code></td><td>Manage services</td><td>name, state, enabled</td></tr>
+          <tr><td><code>copy</code></td><td>Copy files to remote</td><td>src, dest, owner, mode</td></tr>
+          <tr><td><code>template</code></td><td>Copy Jinja2 template</td><td>src, dest</td></tr>
+          <tr><td><code>file</code></td><td>Manage files/dirs</td><td>path, state, mode</td></tr>
+          <tr><td><code>user</code></td><td>Manage users</td><td>name, state, groups</td></tr>
+          <tr><td><code>command</code></td><td>Run command (no shell)</td><td>argv or free-form</td></tr>
+          <tr><td><code>shell</code></td><td>Run shell command</td><td>cmd, chdir</td></tr>
+          <tr><td><code>git</code></td><td>Manage git repos</td><td>repo, dest, version</td></tr>
+          <tr><td><code>debug</code></td><td>Print messages</td><td>msg, var</td></tr>
+          <tr><td><code>set_fact</code></td><td>Set custom facts/vars</td><td>key=value</td></tr>
+          <tr><td><code>pause</code></td><td>Pause playbook</td><td>seconds, prompt</td></tr>
+          <tr><td><code>wait_for</code></td><td>Wait for condition</td><td>port, host, timeout</td></tr>
+          <tr><td><code>include_tasks</code></td><td>Include another task file</td><td>file</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 05 VARIABLES -->
+    <section class="section" id="variables">
+      <div class="section-header">
+        <span class="section-num">MODULE 05</span>
+        <span class="section-title">Variables & Facts</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <h3>Defining Variables</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>variables in a playbook</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Variable demo</span>
+  <span class="kw">hosts:</span> all
+  <span class="kw">vars:</span>
+    <span class="kw">app_port:</span> <span class="num">8080</span>
+    <span class="kw">app_user:</span> <span class="str">deploy</span>
+    <span class="kw">packages:</span>
+      - nginx
+      - git
+      - curl
+
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Print variable</span>
+      <span class="kw">debug:</span>
+        <span class="kw">msg:</span> <span class="str">"App runs on port {{ app_port }} as {{ app_user }}"</span>
+
+    - <span class="kw">name:</span> <span class="str">Install packages</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> <span class="str">"{{ item }}"</span>
+        <span class="kw">state:</span> present
+      <span class="kw">loop:</span> <span class="str">"{{ packages }}"</span></pre>
+      </div>
+
+      <h3>Variable Precedence (Low → High)</h3>
+      <ol>
+        <li>Command line values (<code>-e</code>)</li>
+        <li>Role defaults (<code>defaults/main.yml</code>)</li>
+        <li>Inventory file variables</li>
+        <li><code>group_vars/</code> files</li>
+        <li><code>host_vars/</code> files</li>
+        <li>Play <code>vars:</code> section</li>
+        <li>Task <code>vars:</code></li>
+        <li><strong>Extra vars</strong> (<code>-e "key=val"</code>) — Highest priority</li>
+      </ol>
+
+      <h3>group_vars and host_vars</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Directory Structure</span></div>
+        <pre>inventory/
+├── hosts.ini
+├── group_vars/
+│   ├── all.yml          <span class="cm"># Applies to all hosts</span>
+│   ├── webservers.yml   <span class="cm"># Applies to webservers group</span>
+│   └── dbservers.yml    <span class="cm"># Applies to dbservers group</span>
+└── host_vars/
+    ├── web1.yml         <span class="cm"># Applies to web1 only</span>
+    └── db1.yml          <span class="cm"># Applies to db1 only</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>group_vars/webservers.yml</span></div>
+        <pre><span class="kw">nginx_port:</span> <span class="num">80</span>
+<span class="kw">app_root:</span> <span class="str">/var/www/html</span>
+<span class="kw">ssl_enabled:</span> <span class="num">true</span></pre>
+      </div>
+
+      <h3>Facts (Auto-gathered Variables)</h3>
+      <p>When <code>gather_facts: true</code> (default), Ansible auto-collects system info accessible as variables.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>Using Facts</span></div>
+        <pre><span class="cm"># View all facts for a host:</span>
+<span class="cm"># ansible web1 -m setup</span>
+
+<span class="cm"># Common facts in playbooks:</span>
+- <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"OS: {{ ansible_os_family }}, IP: {{ ansible_default_ipv4.address }}"</span>
+
+<span class="cm"># ansible_os_family → "Debian" | "RedHat"</span>
+<span class="cm"># ansible_distribution → "Ubuntu" | "CentOS" | "Amazon"</span>
+<span class="cm"># ansible_hostname → hostname</span>
+<span class="cm"># ansible_memtotal_mb → total RAM</span>
+<span class="cm"># ansible_processor_vcpus → CPU count</span>
+<span class="cm"># ansible_default_ipv4.address → primary IP</span></pre>
+      </div>
+
+      <h3>Passing Variables at Runtime</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Pass single variable</span>
+ansible-playbook playbook.yml -e "app_port=9090"
+
+<span class="cm"># Pass multiple variables</span>
+ansible-playbook playbook.yml -e "env=production version=2.1"
+
+<span class="cm"># Pass from a vars file</span>
+ansible-playbook playbook.yml -e "@vars/production.yml"</pre>
+      </div>
+    </section>
+
+    <!-- 06 TEMPLATES -->
+    <section class="section" id="templates">
+      <div class="section-header">
+        <span class="section-num">MODULE 06</span>
+        <span class="section-title">Templates (Jinja2)</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <p>Templates allow you to generate dynamic configuration files using Jinja2 templating engine. Template files use the <code>.j2</code> extension.</p>
+
+      <h3>Basic Template Example</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">JINJA2</span><span>templates/nginx.conf.j2</span></div>
+        <pre>server {
+    listen <span class="var2">{{ nginx_port }}</span>;
+    server_name <span class="var2">{{ ansible_hostname }}</span>;
+    root <span class="var2">{{ app_root }}</span>;
+
+    <span class="cm"># Generated by Ansible on {{ ansible_date_time.date }}</span>
+    <span class="cm"># Host: {{ inventory_hostname }}</span>
+
+    location / {
+        proxy_pass http://127.0.0.1:<span class="var2">{{ app_port }}</span>;
+    }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>Using template module in playbook</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Deploy nginx config from template</span>
+  <span class="kw">template:</span>
+    <span class="kw">src:</span> <span class="str">templates/nginx.conf.j2</span>
+    <span class="kw">dest:</span> <span class="str">/etc/nginx/nginx.conf</span>
+    <span class="kw">owner:</span> root
+    <span class="kw">mode:</span> <span class="str">'0644'</span>
+  <span class="kw">notify:</span> Restart Nginx</pre>
+      </div>
+
+      <h3>Jinja2 Control Structures</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">JINJA2</span><span>Conditionals and Loops in Templates</span></div>
+        <pre><span class="cm">{# Conditional #}</span>
+<span class="kw">{% if ssl_enabled %}</span>
+    listen 443 ssl;
+    ssl_certificate /etc/ssl/cert.pem;
+<span class="kw">{% else %}</span>
+    listen 80;
+<span class="kw">{% endif %}</span>
+
+<span class="cm">{# Loop over list #}</span>
+<span class="kw">{% for server in backend_servers %}</span>
+    server <span class="var2">{{ server.ip }}</span>:<span class="var2">{{ server.port }}</span>;
+<span class="kw">{% endfor %}</span>
+
+<span class="cm">{# Filters #}</span>
+<span class="var2">{{ app_name | upper }}</span>          <span class="cm">{# MYAPP #}</span>
+<span class="var2">{{ packages | join(', ') }}</span>     <span class="cm">{# nginx, git, curl #}</span>
+<span class="var2">{{ version | default('1.0') }}</span>  <span class="cm">{# fallback value #}</span></pre>
+      </div>
+    </section>
+
+    <!-- 07 LOOPS -->
+    <section class="section" id="loops">
+      <div class="section-header">
+        <span class="section-num">MODULE 07</span>
+        <span class="section-title">Loops & Conditionals</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <h3>Loops</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>loop examples</span></div>
+        <pre><span class="cm"># Loop over a list</span>
+- <span class="kw">name:</span> <span class="str">Install packages</span>
+  <span class="kw">apt:</span>
+    <span class="kw">name:</span> <span class="str">"{{ item }}"</span>
+    <span class="kw">state:</span> present
+  <span class="kw">loop:</span>
+    - nginx
+    - git
+    - curl
+    - python3
+
+<span class="cm"># Loop over list of dicts</span>
+- <span class="kw">name:</span> <span class="str">Create users</span>
+  <span class="kw">user:</span>
+    <span class="kw">name:</span> <span class="str">"{{ item.name }}"</span>
+    <span class="kw">groups:</span> <span class="str">"{{ item.groups }}"</span>
+    <span class="kw">state:</span> present
+  <span class="kw">loop:</span>
+    - { <span class="kw">name:</span> alice, <span class="kw">groups:</span> sudo }
+    - { <span class="kw">name:</span> bob, <span class="kw">groups:</span> www-data }
+
+<span class="cm"># with_items (older syntax, still works)</span>
+- <span class="kw">name:</span> <span class="str">Create directories</span>
+  <span class="kw">file:</span>
+    <span class="kw">path:</span> <span class="str">"{{ item }}"</span>
+    <span class="kw">state:</span> directory
+  <span class="kw">with_items:</span>
+    - /var/app
+    - /var/logs
+    - /var/config</pre>
+      </div>
+
+      <h3>Conditionals (when)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>when conditionals</span></div>
+        <pre><span class="cm"># OS-specific tasks</span>
+- <span class="kw">name:</span> <span class="str">Install nginx on Debian</span>
+  <span class="kw">apt:</span>
+    <span class="kw">name:</span> nginx
+    <span class="kw">state:</span> present
+  <span class="kw">when:</span> ansible_os_family == <span class="str">"Debian"</span>
+
+- <span class="kw">name:</span> <span class="str">Install httpd on RHEL</span>
+  <span class="kw">yum:</span>
+    <span class="kw">name:</span> httpd
+    <span class="kw">state:</span> present
+  <span class="kw">when:</span> ansible_os_family == <span class="str">"RedHat"</span>
+
+<span class="cm"># Multiple conditions</span>
+- <span class="kw">name:</span> <span class="str">Deploy in production only</span>
+  <span class="kw">copy:</span>
+    <span class="kw">src:</span> prod.conf
+    <span class="kw">dest:</span> /etc/app/
+  <span class="kw">when:</span>
+    - env == <span class="str">"production"</span>
+    - ansible_memtotal_mb >= <span class="num">2048</span>
+
+<span class="cm"># Check if variable is defined</span>
+- <span class="kw">name:</span> <span class="str">Use custom port if defined</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"Port: {{ custom_port }}"</span>
+  <span class="kw">when:</span> custom_port is defined
+
+<span class="cm"># Register and check result</span>
+- <span class="kw">name:</span> <span class="str">Check if file exists</span>
+  <span class="kw">stat:</span>
+    <span class="kw">path:</span> <span class="str">/etc/app.conf</span>
+  <span class="kw">register:</span> app_conf
+
+- <span class="kw">name:</span> <span class="str">Print if exists</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"Config found!"</span>
+  <span class="kw">when:</span> app_conf.stat.exists</pre>
+      </div>
+    </section>
+
+    <!-- 08 ROLES -->
+    <section class="section" id="roles">
+      <div class="section-header">
+        <span class="section-num">MODULE 08</span>
+        <span class="section-title">Roles</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <p>Roles are the primary mechanism for organizing playbooks. They package tasks, vars, templates, files, and handlers into a reusable, shareable unit.</p>
+
+      <h3>Role Directory Structure</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Standard Role Layout</span></div>
+        <pre>roles/
+└── nginx/
+    ├── tasks/
+    │   └── main.yml        <span class="cm"># Main task list</span>
+    ├── handlers/
+    │   └── main.yml        <span class="cm"># Handlers (restart nginx, etc.)</span>
+    ├── templates/
+    │   └── nginx.conf.j2   <span class="cm"># Jinja2 templates</span>
+    ├── files/
+    │   └── index.html      <span class="cm"># Static files to copy</span>
+    ├── vars/
+    │   └── main.yml        <span class="cm"># Role variables (high priority)</span>
+    ├── defaults/
+    │   └── main.yml        <span class="cm"># Default variables (low priority)</span>
+    ├── meta/
+    │   └── main.yml        <span class="cm"># Role metadata, dependencies</span>
+    └── README.md</pre>
+      </div>
+
+      <h3>Creating a Role</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Auto-generate role skeleton</span>
+ansible-galaxy init roles/nginx
+
+<span class="cm"># Result: creates all standard dirs automatically</span></pre>
+      </div>
+
+      <h3>Role Tasks and Defaults</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>roles/nginx/defaults/main.yml</span></div>
+        <pre><span class="kw">nginx_port:</span> <span class="num">80</span>
+<span class="kw">nginx_user:</span> www-data
+<span class="kw">nginx_worker_processes:</span> auto
+<span class="kw">app_root:</span> <span class="str">/var/www/html</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>roles/nginx/tasks/main.yml</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Install nginx</span>
+  <span class="kw">apt:</span>
+    <span class="kw">name:</span> nginx
+    <span class="kw">state:</span> present
+    <span class="kw">update_cache:</span> <span class="num">yes</span>
+  <span class="kw">tags:</span> [install]
+
+- <span class="kw">name:</span> <span class="str">Deploy config</span>
+  <span class="kw">template:</span>
+    <span class="kw">src:</span> <span class="str">nginx.conf.j2</span>
+    <span class="kw">dest:</span> <span class="str">/etc/nginx/nginx.conf</span>
+  <span class="kw">notify:</span> Restart Nginx
+  <span class="kw">tags:</span> [config]
+
+- <span class="kw">name:</span> <span class="str">Start nginx</span>
+  <span class="kw">service:</span>
+    <span class="kw">name:</span> nginx
+    <span class="kw">state:</span> started
+    <span class="kw">enabled:</span> <span class="num">yes</span>
+  <span class="kw">tags:</span> [service]</pre>
+      </div>
+
+      <h3>Using Roles in a Playbook</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>site.yml</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Configure web servers</span>
+  <span class="kw">hosts:</span> webservers
+  <span class="kw">become:</span> <span class="num">true</span>
+  <span class="kw">roles:</span>
+    - common          <span class="cm"># Apply common role first</span>
+    - nginx           <span class="cm"># Then nginx role</span>
+    - <span class="kw">role:</span> app
+      <span class="kw">vars:</span>           <span class="cm"># Override role defaults</span>
+        <span class="kw">app_port:</span> <span class="num">9090</span></pre>
+      </div>
+
+      <h3>Ansible Galaxy — Community Roles</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Search roles on galaxy.ansible.com</span>
+ansible-galaxy search nginx
+
+<span class="cm"># Install a community role</span>
+ansible-galaxy install geerlingguy.nginx
+
+<span class="cm"># Install from requirements file</span>
+ansible-galaxy install -r requirements.yml
+
+<span class="cm"># List installed roles</span>
+ansible-galaxy list</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>requirements.yml</span></div>
+        <pre><span class="kw">roles:</span>
+  - <span class="kw">name:</span> geerlingguy.nginx
+    <span class="kw">version:</span> <span class="str">"3.2.0"</span>
+  - <span class="kw">name:</span> geerlingguy.mysql
+    <span class="kw">version:</span> <span class="str">"4.3.1"</span></pre>
+      </div>
+    </section>
+
+    <!-- 09 VAULT -->
+    <section class="section" id="vault">
+      <div class="section-header">
+        <span class="section-num">MODULE 09</span>
+        <span class="section-title">Ansible Vault</span>
+        <span class="level-badge advanced">Advanced</span>
+      </div>
+
+      <p>Ansible Vault encrypts sensitive data (passwords, API keys, secrets) at rest using AES-256. Never store secrets in plaintext in version control.</p>
+
+      <h3>Creating and Editing Vaults</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Vault Commands</span></div>
+        <pre><span class="cm"># Create a new encrypted file</span>
+ansible-vault create secrets.yml
+
+<span class="cm"># Edit existing encrypted file</span>
+ansible-vault edit secrets.yml
+
+<span class="cm"># View without editing</span>
+ansible-vault view secrets.yml
+
+<span class="cm"># Encrypt an existing file</span>
+ansible-vault encrypt vars/passwords.yml
+
+<span class="cm"># Decrypt a file</span>
+ansible-vault decrypt vars/passwords.yml
+
+<span class="cm"># Re-key (change vault password)</span>
+ansible-vault rekey secrets.yml
+
+<span class="cm"># Encrypt a single string value</span>
+ansible-vault encrypt_string 'my_secret_pass' --name 'db_password'</pre>
+      </div>
+
+      <h3>Vault File Content</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>vault/secrets.yml (decrypted view)</span></div>
+        <pre><span class="kw">db_password:</span> <span class="str">"SuperSecretPass123!"</span>
+<span class="kw">api_key:</span> <span class="str">"sk-abc123def456"</span>
+<span class="kw">aws_secret_key:</span> <span class="str">"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"</span></pre>
+      </div>
+
+      <h3>Using Vault in Playbooks</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>playbook.yml</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Deploy database</span>
+  <span class="kw">hosts:</span> dbservers
+  <span class="kw">vars_files:</span>
+    - vars/vault/secrets.yml    <span class="cm"># Vault-encrypted file</span>
+    - vars/main.yml             <span class="cm"># Regular vars file</span>
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Configure DB password</span>
+      <span class="kw">shell:</span> <span class="str">"mysqladmin -u root password {{ db_password }}"</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Running Playbooks with Vault</span></div>
+        <pre><span class="cm"># Prompt for vault password at runtime</span>
+ansible-playbook playbook.yml --ask-vault-pass
+
+<span class="cm"># Use a password file (DO NOT commit this file)</span>
+ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
+
+<span class="cm"># Set in ansible.cfg</span>
+<span class="cm"># vault_password_file = ~/.vault_pass</span></pre>
+      </div>
+
+      <div class="box box-danger">
+        <div class="box-title">🔐 Production Rule</div>
+        Always add <code>.vault_pass</code> and any decrypted secret files to <code>.gitignore</code>. Only commit encrypted vault files to version control.
+      </div>
+    </section>
+
+    <!-- 10 HANDLERS & TAGS -->
+    <section class="section" id="handlers">
+      <div class="section-header">
+        <span class="section-num">MODULE 10</span>
+        <span class="section-title">Handlers & Tags</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <h3>Handlers</h3>
+      <p>Handlers are tasks that only run when notified by another task. They run once at the end of the play, regardless of how many tasks notify them. Classic use case: restart a service after a config change.</p>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>handlers example</span></div>
+        <pre><span class="kw">tasks:</span>
+  - <span class="kw">name:</span> <span class="str">Copy nginx config</span>
+    <span class="kw">template:</span>
+      <span class="kw">src:</span> nginx.conf.j2
+      <span class="kw">dest:</span> /etc/nginx/nginx.conf
+    <span class="kw">notify:</span>
+      - Reload Nginx
+      - Send Slack Notification
+
+  - <span class="kw">name:</span> <span class="str">Update SSL cert</span>
+    <span class="kw">copy:</span>
+      <span class="kw">src:</span> cert.pem
+      <span class="kw">dest:</span> /etc/ssl/
+    <span class="kw">notify:</span> Reload Nginx   <span class="cm"># Won't run twice!</span>
+
+<span class="kw">handlers:</span>
+  - <span class="kw">name:</span> Reload Nginx
+    <span class="kw">service:</span>
+      <span class="kw">name:</span> nginx
+      <span class="kw">state:</span> reloaded
+
+  - <span class="kw">name:</span> Send Slack Notification
+    <span class="kw">uri:</span>
+      <span class="kw">url:</span> <span class="str">"{{ slack_webhook }}"</span>
+      <span class="kw">method:</span> POST
+      <span class="kw">body_format:</span> json
+      <span class="kw">body:</span>
+        <span class="kw">text:</span> <span class="str">"Nginx reloaded on {{ inventory_hostname }}"</span></pre>
+      </div>
+
+      <h3>Tags</h3>
+      <p>Tags let you selectively run parts of a playbook without running everything.</p>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>tags usage</span></div>
+        <pre><span class="kw">tasks:</span>
+  - <span class="kw">name:</span> <span class="str">Install nginx</span>
+    <span class="kw">apt:</span>
+      <span class="kw">name:</span> nginx
+    <span class="kw">tags:</span> [install, nginx]
+
+  - <span class="kw">name:</span> <span class="str">Configure nginx</span>
+    <span class="kw">template:</span>
+      <span class="kw">src:</span> nginx.conf.j2
+      <span class="kw">dest:</span> /etc/nginx/nginx.conf
+    <span class="kw">tags:</span> [config, nginx]
+
+  - <span class="kw">name:</span> <span class="str">Deploy app code</span>
+    <span class="kw">git:</span>
+      <span class="kw">repo:</span> <span class="str">https://github.com/org/app.git</span>
+      <span class="kw">dest:</span> <span class="str">/var/www/html</span>
+    <span class="kw">tags:</span> [deploy, app]</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Running with tags</span></div>
+        <pre><span class="cm"># Run only tasks tagged 'config'</span>
+ansible-playbook site.yml --tags config
+
+<span class="cm"># Run all except 'deploy'</span>
+ansible-playbook site.yml --skip-tags deploy
+
+<span class="cm"># Run only 'install' and 'config'</span>
+ansible-playbook site.yml --tags "install,config"
+
+<span class="cm"># List all available tags</span>
+ansible-playbook site.yml --list-tags</pre>
+      </div>
+    </section>
+
+    <!-- 11 TERRAFORM INTEGRATION -->
+    <section class="section" id="terraform">
+      <div class="section-header">
+        <span class="section-num">MODULE 11</span>
+        <span class="section-title">Terraform Integration</span>
+        <span class="level-badge advanced">Advanced</span>
+      </div>
+
+      <p>Terraform provisions infrastructure; Ansible configures it. Together they form a complete end-to-end automation pipeline. The course uses Terraform to spin up real AWS EC2 instances (Ubuntu, RHEL, Amazon Linux) and Ansible to configure them.</p>
+
+      <h3>Architecture</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">TEXT</span><span>End-to-End Pipeline</span></div>
+        <pre>┌─────────────────────────────────────────────┐
+│  Terraform (terraform apply)                │
+│  └── Provision AWS EC2 instances            │
+│  └── Output: public IPs, key pairs          │
+└──────────────────┬──────────────────────────┘
+                   │ Outputs IP addresses
+                   ▼
+┌─────────────────────────────────────────────┐
+│  Ansible Inventory (dynamic / static)       │
+│  └── Reads IPs from Terraform outputs       │
+│  └── Connects via SSH                       │
+└──────────────────┬──────────────────────────┘
+                   │ Runs playbooks
+                   ▼
+┌─────────────────────────────────────────────┐
+│  Ansible (ansible-playbook)                 │
+│  └── Install software                       │
+│  └── Configure services                     │
+│  └── Deploy application code               │
+└─────────────────────────────────────────────┘</pre>
+      </div>
+
+      <h3>Terraform: Provision EC2 Instances</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">HCL</span><span>main.tf</span></div>
+        <pre><span class="kw">provider</span> <span class="str">"aws"</span> {
+  region = <span class="str">"us-east-1"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_key_pair"</span> <span class="str">"ansible_key"</span> {
+  key_name   = <span class="str">"ansible-key"</span>
+  public_key = <span class="fn">file</span>(<span class="str">"~/.ssh/ansible_key.pub"</span>)
+}
+
+<span class="kw">resource</span> <span class="str">"aws_instance"</span> <span class="str">"ubuntu_node"</span> {
+  ami           = <span class="str">"ami-0c02fb55956c7d316"</span>  <span class="cm"># Ubuntu 22.04</span>
+  instance_type = <span class="str">"t2.micro"</span>
+  key_name      = aws_key_pair.ansible_key.key_name
+
+  tags = {
+    Name = <span class="str">"ansible-ubuntu"</span>
+    Role = <span class="str">"webserver"</span>
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_instance"</span> <span class="str">"rhel_node"</span> {
+  ami           = <span class="str">"ami-0583d8c7a9c35822c"</span>  <span class="cm"># RHEL 9</span>
+  instance_type = <span class="str">"t2.micro"</span>
+  key_name      = aws_key_pair.ansible_key.key_name
+
+  tags = {
+    Name = <span class="str">"ansible-rhel"</span>
+    Role = <span class="str">"dbserver"</span>
+  }
+}
+
+<span class="kw">output</span> <span class="str">"ubuntu_public_ip"</span> {
+  value = aws_instance.ubuntu_node.public_ip
+}
+
+<span class="kw">output</span> <span class="str">"rhel_public_ip"</span> {
+  value = aws_instance.rhel_node.public_ip
+}</pre>
+      </div>
+
+      <h3>Pattern 1: Static Inventory from Terraform Outputs</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Workflow</span></div>
+        <pre><span class="cm"># 1. Provision with Terraform</span>
+terraform init
+terraform apply -auto-approve
+
+<span class="cm"># 2. Get outputs</span>
+terraform output ubuntu_public_ip  <span class="cm"># e.g. 54.12.34.56</span>
+terraform output rhel_public_ip    <span class="cm"># e.g. 54.12.34.57</span>
+
+<span class="cm"># 3. Write to inventory file (manually or via script)</span>
+<span class="cm"># 4. Run Ansible playbook</span>
+ansible-playbook -i inventory.ini site.yml</pre>
+      </div>
+
+      <h3>Pattern 2: Terraform Local-Exec Calls Ansible</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">HCL</span><span>main.tf — Invoke Ansible after provisioning</span></div>
+        <pre><span class="kw">resource</span> <span class="str">"aws_instance"</span> <span class="str">"web"</span> {
+  ami           = <span class="str">"ami-0c02fb55956c7d316"</span>
+  instance_type = <span class="str">"t2.micro"</span>
+  key_name      = aws_key_pair.ansible_key.key_name
+
+  <span class="cm"># Wait for SSH to be ready</span>
+  provisioner <span class="str">"remote-exec"</span> {
+    inline = [<span class="str">"echo 'SSH is ready'"</span>]
+    connection {
+      host        = <span class="fn">self</span>.public_ip
+      type        = <span class="str">"ssh"</span>
+      user        = <span class="str">"ubuntu"</span>
+      private_key = <span class="fn">file</span>(<span class="str">"~/.ssh/ansible_key"</span>)
+    }
+  }
+
+  <span class="cm"># Run Ansible playbook</span>
+  provisioner <span class="str">"local-exec"</span> {
+    command = <span class="fn"><<EOT</span>
+      ANSIBLE_HOST_KEY_CHECKING=False \
+      ansible-playbook -i '${self.public_ip},' \
+        -u ubuntu \
+        --private-key ~/.ssh/ansible_key \
+        site.yml
+    <span class="fn">EOT</span>
+  }
+}</pre>
+      </div>
+
+      <h3>Pattern 3: Dynamic Inventory (Recommended for Production)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>AWS Dynamic Inventory</span></div>
+        <pre><span class="cm"># Install AWS collection</span>
+ansible-galaxy collection install amazon.aws
+
+<span class="cm"># Create aws_ec2.yml dynamic inventory plugin config</span>
+cat > inventory/aws_ec2.yml << <span class="str">'EOF'</span>
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:Project: ansible-course
+keyed_groups:
+  - key: tags.Role
+    prefix: role
+hostnames:
+  - public-ip-address
+compose:
+  ansible_host: public_ip_address
+<span class="str">EOF</span>
+
+<span class="cm"># Run playbook with dynamic inventory</span>
+ansible-playbook -i inventory/aws_ec2.yml site.yml \
+  --private-key ~/.ssh/ansible_key \
+  -u ubuntu</pre>
+      </div>
+
+      <h3>Multi-OS Playbook (Ubuntu + RHEL + Amazon Linux)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>site.yml — Cross-platform playbook</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Configure all servers</span>
+  <span class="kw">hosts:</span> all
+  <span class="kw">become:</span> <span class="num">true</span>
+
+  <span class="kw">tasks:</span>
+    <span class="cm"># Ubuntu / Debian</span>
+    - <span class="kw">name:</span> <span class="str">Install nginx (Debian)</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> present
+        <span class="kw">update_cache:</span> <span class="num">yes</span>
+      <span class="kw">when:</span> ansible_os_family == <span class="str">"Debian"</span>
+
+    <span class="cm"># RHEL / CentOS</span>
+    - <span class="kw">name:</span> <span class="str">Install nginx (RedHat)</span>
+      <span class="kw">yum:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> present
+      <span class="kw">when:</span> ansible_os_family == <span class="str">"RedHat"</span>
+
+    <span class="cm"># Amazon Linux 2</span>
+    - <span class="kw">name:</span> <span class="str">Install nginx (Amazon Linux)</span>
+      <span class="kw">command:</span> amazon-linux-extras install nginx1 -y
+      <span class="kw">when:</span> ansible_distribution == <span class="str">"Amazon"</span>
+
+    <span class="cm"># Universal — works on all</span>
+    - <span class="kw">name:</span> <span class="str">Start nginx</span>
+      <span class="kw">service:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> started
+        <span class="kw">enabled:</span> <span class="num">yes</span></pre>
+      </div>
+    </section>
+
+    <!-- 12 PRODUCTION -->
+    <section class="section" id="production">
+      <div class="section-header">
+        <span class="section-num">MODULE 12</span>
+        <span class="section-title">Production Best Practices</span>
+        <span class="level-badge advanced">Advanced</span>
+      </div>
+
+      <h3>Directory Structure (Production)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Recommended Layout</span></div>
+        <pre>ansible-project/
+├── ansible.cfg               <span class="cm"># Ansible configuration</span>
+├── site.yml                  <span class="cm"># Master playbook</span>
+├── requirements.yml          <span class="cm"># Galaxy role dependencies</span>
+│
+├── inventories/
+│   ├── production/
+│   │   ├── hosts.ini
+│   │   ├── group_vars/
+│   │   └── host_vars/
+│   └── staging/
+│       ├── hosts.ini
+│       └── group_vars/
+│
+├── roles/
+│   ├── common/
+│   ├── nginx/
+│   └── app/
+│
+├── vars/
+│   ├── main.yml
+│   └── vault/
+│       └── secrets.yml       <span class="cm"># Encrypted with ansible-vault</span>
+│
+├── templates/
+├── files/
+└── .gitignore                <span class="cm"># Include .vault_pass, *.pem</span></pre>
+      </div>
+
+      <h3>ansible.cfg</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">INI</span><span>ansible.cfg</span></div>
+        <pre>[defaults]
+inventory          = inventories/production/hosts.ini
+remote_user        = ubuntu
+private_key_file   = ~/.ssh/ansible_key
+host_key_checking  = False
+roles_path         = roles
+vault_password_file = ~/.vault_pass
+retry_files_enabled = False
+stdout_callback    = yaml
+
+[privilege_escalation]
+become             = True
+become_method      = sudo
+become_user        = root
+become_ask_pass    = False
+
+[ssh_connection]
+ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+pipelining = True</pre>
+      </div>
+
+      <h3>Production Checklist</h3>
+      <ul>
+        <li><strong>Always use Vault</strong> for secrets — never plaintext passwords in git</li>
+        <li><strong>Separate inventories</strong> for staging and production</li>
+        <li><strong>Use roles</strong> for all reusable logic — no monolithic playbooks</li>
+        <li><strong>Pin role versions</strong> in <code>requirements.yml</code></li>
+        <li><strong>Tag everything</strong> so you can run partial deployments safely</li>
+        <li><strong>Use <code>--check</code></strong> (dry-run) before applying to production</li>
+        <li><strong>Enable pipelining</strong> in <code>ansible.cfg</code> for performance</li>
+        <li><strong>Use dynamic inventory</strong> in cloud environments</li>
+        <li><strong>Store state in git</strong> — treat playbooks as code (PRs, reviews)</li>
+        <li><strong>Handle errors</strong> with <code>ignore_errors</code>, <code>block/rescue/always</code></li>
+      </ul>
+
+      <h3>Error Handling</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>block/rescue/always pattern</span></div>
+        <pre><span class="kw">tasks:</span>
+  - <span class="kw">block:</span>
+      - <span class="kw">name:</span> <span class="str">Try to deploy app</span>
+        <span class="kw">command:</span> ./deploy.sh
+
+      - <span class="kw">name:</span> <span class="str">Run migrations</span>
+        <span class="kw">command:</span> ./migrate.sh
+
+    <span class="kw">rescue:</span>
+      - <span class="kw">name:</span> <span class="str">Rollback on failure</span>
+        <span class="kw">command:</span> ./rollback.sh
+
+      - <span class="kw">name:</span> <span class="str">Notify team</span>
+        <span class="kw">debug:</span>
+          <span class="kw">msg:</span> <span class="str">"Deployment FAILED on {{ inventory_hostname }}"</span>
+
+    <span class="kw">always:</span>
+      - <span class="kw">name:</span> <span class="str">Cleanup temp files</span>
+        <span class="kw">file:</span>
+          <span class="kw">path:</span> <span class="str">/tmp/deploy_artifacts</span>
+          <span class="kw">state:</span> absent</pre>
+      </div>
+    </section>
+
+    <!-- CHEATSHEET -->
+    <section class="section" id="cheatsheet">
+      <div class="section-header">
+        <span class="section-num">★ REF</span>
+        <span class="section-title">Quick Cheatsheet</span>
+        <span class="level-badge advanced">All Levels</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Command</th><th>What it does</th></tr>
+          <tr><td><code>ansible all -m ping</code></td><td>Test connectivity to all hosts</td></tr>
+          <tr><td><code>ansible all -m setup</code></td><td>Gather and display all facts</td></tr>
+          <tr><td><code>ansible-playbook site.yml</code></td><td>Run a playbook</td></tr>
+          <tr><td><code>ansible-playbook site.yml --check</code></td><td>Dry run (no changes)</td></tr>
+          <tr><td><code>ansible-playbook site.yml -v</code></td><td>Verbose output</td></tr>
+          <tr><td><code>ansible-playbook site.yml --tags deploy</code></td><td>Run tagged tasks only</td></tr>
+          <tr><td><code>ansible-playbook site.yml --limit web1</code></td><td>Run on specific host</td></tr>
+          <tr><td><code>ansible-galaxy init roles/myrole</code></td><td>Scaffold a new role</td></tr>
+          <tr><td><code>ansible-galaxy install -r requirements.yml</code></td><td>Install role dependencies</td></tr>
+          <tr><td><code>ansible-vault create secrets.yml</code></td><td>Create encrypted file</td></tr>
+          <tr><td><code>ansible-vault edit secrets.yml</code></td><td>Edit encrypted file</td></tr>
+          <tr><td><code>ansible-playbook site.yml --ask-vault-pass</code></td><td>Run playbook, ask for vault password</td></tr>
+          <tr><td><code>ansible-inventory --list</code></td><td>Show inventory as JSON</td></tr>
+          <tr><td><code>ansible-inventory --graph</code></td><td>Show inventory tree</td></tr>
+          <tr><td><code>ansible-doc apt</code></td><td>Show docs for apt module</td></tr>
+          <tr><td><code>ansible-lint playbook.yml</code></td><td>Lint playbook for best practices</td></tr>
+        </table>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">🚀 Learning Path Summary</div>
+        <strong>Beginner:</strong> Inventory → Ad-hoc → Basic Playbooks<br>
+        <strong>Intermediate:</strong> Variables → Facts → Templates → Loops → Conditionals<br>
+        <strong>Advanced:</strong> Roles → Galaxy → Vault → Handlers → Tags → Terraform Integration → CI/CD
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <span>Notes based on <strong>TrainWithShubham</strong> — "Ansible In One Shot"</span>
+  <span><a href="https://github.com/TrainWithShubham/ansible-in-one-shot" target="_blank">github.com/TrainWithShubham/ansible-in-one-shot</a></span>
+</footer>
+
+<script>
+  // Active sidebar link on scroll
+  const sections = document.querySelectorAll('.section');
+  const links = document.querySelectorAll('.sidebar a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
