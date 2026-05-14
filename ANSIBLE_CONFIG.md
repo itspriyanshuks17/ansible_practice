@@ -109,7 +109,7 @@ Then run a connection test:
 ```
 ansible -i hosts.ini workers -m ping
 ```
-
+![alt text](images/ansible-test-ping.png)
 ## 5. Check that Ansible is using the file
 
 Run:
