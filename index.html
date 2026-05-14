@@ -579,6 +579,13 @@
     <div class="sidebar-divider"></div>
     <div class="sidebar-label">Quick Ref</div>
     <a href="#cheatsheet"><span class="num">★</span> Cheatsheet</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Your Notes</div>
+    <a href="#installation"><span class="num">A</span> Installation</a>
+    <a href="#config"><span class="num">B</span> Config & Inventory</a>
+    <a href="#commands"><span class="num">C</span> Commands Ref</a>
+    <a href="#whywhat"><span class="num">D</span> Why / What / When</a>
+    <a href="#awslab"><span class="num">E</span> AWS EC2 Lab</a>
   </nav>
 
   <!-- MAIN -->
@@ -1774,6 +1781,376 @@ pipelining = True</pre>
         <strong>Intermediate:</strong> Variables → Facts → Templates → Loops → Conditionals<br>
         <strong>Advanced:</strong> Roles → Galaxy → Vault → Handlers → Tags → Terraform Integration → CI/CD
       </div>
+    </section>
+
+    <!-- A: INSTALLATION -->
+    <section class="section" id="installation">
+      <div class="section-header">
+        <span class="section-num">YOUR NOTES A</span>
+        <span class="section-title">Installation</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>Choose the method that best fits your needs. After installing, verify with <code>ansible --version</code>.</p>
+
+      <h3>Debian / Ubuntu</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Option A — OS packages</span></div>
+        <pre>sudo apt update
+sudo apt install -y ansible</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Option B — pip virtualenv (latest)</span></div>
+        <pre>python3 -m pip install --user virtualenv
+python3 -m virtualenv ~/.venv/ansible
+source ~/.venv/ansible/bin/activate
+pip install ansible</pre>
+      </div>
+
+      <h3>RHEL / CentOS / AlmaLinux / Rocky</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># EPEL</span>
+sudo yum install -y epel-release
+sudo yum install -y ansible
+
+<span class="cm"># Fedora</span>
+sudo dnf install -y ansible</pre>
+      </div>
+
+      <h3>Amazon Linux 2</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>sudo amazon-linux-extras enable ansible2
+sudo yum clean metadata
+sudo yum install -y ansible</pre>
+      </div>
+
+      <h3>macOS</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Homebrew (recommended)</span></div>
+        <pre>brew update
+brew install ansible</pre>
+      </div>
+
+      <h3>Windows</h3>
+      <div class="box box-warn">
+        <div class="box-title">⚠ Windows Control Node</div>
+        Ansible is not supported as a control node on native Windows. Use WSL (Ubuntu recommended) or a Linux VM.
+      </div>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">POWERSHELL</span><span>Enable WSL + Ubuntu</span></div>
+        <pre>wsl --install -d Ubuntu
+<span class="cm"># Then follow the Linux instructions inside Ubuntu</span></pre>
+      </div>
+
+      <h3>pipx (isolated, recommended for single-user)</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install ansible</pre>
+      </div>
+
+      <h3>Post-install verification</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible --version
+which ansible
+
+<span class="cm"># Quick local ping</span>
+echo "[local]\nlocalhost ansible_connection=local" > hosts
+ansible -m ping all -i hosts</pre>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 Tips</div>
+        Use virtualenv or pipx to avoid conflicting distro packages. On RHEL-family, ensure EPEL is enabled. If <code>ansible</code> CLI isn't found after pip install, ensure <code>~/.local/bin</code> is on your PATH.
+      </div>
+    </section>
+
+    <!-- B: CONFIG & INVENTORY -->
+    <section class="section" id="config">
+      <div class="section-header">
+        <span class="section-num">YOUR NOTES B</span>
+        <span class="section-title">Config & Inventory</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>An <code>ansible.cfg</code> file sets defaults so you don't repeat flags on every command.</p>
+
+      <h3>ansible.cfg</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">INI</span><span>ansible.cfg</span></div>
+        <pre>[defaults]
+inventory          = hosts.ini
+host_key_checking  = False
+remote_user        = ec2-user
+private_key_file   = ~/.ssh/ansible-ec2-key
+stdout_callback    = yaml
+
+[privilege_escalation]
+become             = True
+become_method      = sudo
+become_ask_pass    = False</pre>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Setting</th><th>What it does</th></tr>
+          <tr><td><code>inventory</code></td><td>Default inventory file</td></tr>
+          <tr><td><code>host_key_checking</code></td><td>Disables SSH host key prompts (lab use)</td></tr>
+          <tr><td><code>remote_user</code></td><td>Default SSH user for managed nodes</td></tr>
+          <tr><td><code>private_key_file</code></td><td>SSH private key for EC2 connections</td></tr>
+          <tr><td><code>stdout_callback</code></td><td>Makes output easier to read</td></tr>
+          <tr><td><code>become</code></td><td>Enables privilege escalation (sudo)</td></tr>
+        </table>
+      </div>
+
+      <h3>hosts.ini — Inventory file</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">INI</span><span>hosts.ini (your current lab setup)</span></div>
+        <pre>[servers]
+worker-node-1 ansible_host=35.154.19.150 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/ansible-master-key
+worker-node-2 ansible_host=3.110.217.103 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/ansible-master-key
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o IdentitiesOnly=yes -o StrictHostKeyChecking=no'</pre>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Key</th><th>Meaning</th></tr>
+          <tr><td><code>[servers]</code></td><td>Host group name used in playbooks</td></tr>
+          <tr><td><code>ansible_host</code></td><td>Real IP / DNS of the EC2 instance</td></tr>
+          <tr><td><code>ansible_user</code></td><td>SSH username (ubuntu / ec2-user)</td></tr>
+          <tr><td><code>ansible_ssh_private_key_file</code></td><td>Path to the SSH private key</td></tr>
+          <tr><td><code>[all:vars]</code></td><td>Variables applied to every host</td></tr>
+          <tr><td><code>ansible_python_interpreter</code></td><td>Python binary path on remote host</td></tr>
+          <tr><td><code>ansible_ssh_common_args</code></td><td>Extra SSH flags (IdentitiesOnly, no host-key check)</td></tr>
+        </table>
+      </div>
+
+      <div class="box box-warn">
+        <div class="box-title">⚠ Note</div>
+        <code>ansible_host_keychecking=false</code> is not a valid Ansible variable. Use <code>host_key_checking = False</code> in <code>ansible.cfg</code> or the <code>StrictHostKeyChecking=no</code> SSH arg instead.
+      </div>
+
+      <h3>Verify config is loaded</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible --version
+<span class="cm"># Should show the active ansible.cfg path</span>
+
+ansible -m ping all</pre>
+      </div>
+    </section>
+
+    <!-- C: COMMANDS REFERENCE -->
+    <section class="section" id="commands">
+      <div class="section-header">
+        <span class="section-num">YOUR NOTES C</span>
+        <span class="section-title">Commands Reference</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <h3>Recommended workflow order</h3>
+      <ol>
+        <li>Check inventory with <code>ansible-inventory</code></li>
+        <li>Check settings with <code>ansible-config</code></li>
+        <li>Read module docs with <code>ansible-doc</code></li>
+        <li>Test connectivity with <code>ansible -m ping</code></li>
+        <li>Run your playbook with <code>ansible-playbook</code></li>
+        <li>Protect secrets with <code>ansible-vault</code></li>
+      </ol>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Command</th><th>Purpose</th><th>Key Options</th></tr>
+          <tr><td><code>ansible</code></td><td>Ad-hoc tasks on managed nodes</td><td><code>-m</code> module, <code>-a</code> args, <code>-i</code> inventory, <code>-b</code> become</td></tr>
+          <tr><td><code>ansible-playbook</code></td><td>Run YAML playbooks</td><td><code>--check</code> dry-run, <code>--diff</code>, <code>--limit</code>, <code>--tags</code></td></tr>
+          <tr><td><code>ansible-inventory</code></td><td>Inspect inventory data</td><td><code>--list</code>, <code>--graph</code></td></tr>
+          <tr><td><code>ansible-config</code></td><td>Inspect Ansible config settings</td><td><code>view</code>, <code>dump --only-changed</code></td></tr>
+          <tr><td><code>ansible-doc</code></td><td>Read module/plugin docs</td><td><code>ansible-doc ping</code>, <code>-l</code> list all</td></tr>
+          <tr><td><code>ansible-galaxy</code></td><td>Manage roles and collections</td><td><code>collection install</code>, <code>role init</code></td></tr>
+          <tr><td><code>ansible-vault</code></td><td>Encrypt/manage secrets</td><td><code>create</code>, <code>edit</code>, <code>view</code>, <code>encrypt_string</code></td></tr>
+          <tr><td><code>ansible-pull</code></td><td>Pull playbook from git and run locally</td><td><code>-U &lt;repo-url&gt;</code></td></tr>
+          <tr><td><code>ansible-test</code></td><td>Test modules/collections (dev use)</td><td><code>sanity</code></td></tr>
+        </table>
+      </div>
+
+      <h3>Ad-hoc examples</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Ping all hosts</span>
+ansible -i hosts.ini servers -m ping
+
+<span class="cm"># Run shell commands</span>
+ansible -i hosts.ini servers -m command -a "uptime"
+ansible -i hosts.ini servers -m shell -a "df -h"
+
+<span class="cm"># Inspect inventory</span>
+ansible-inventory -i hosts.ini --graph
+
+<span class="cm"># Check active config</span>
+ansible-config dump --only-changed
+
+<span class="cm"># Read module docs</span>
+ansible-doc copy</pre>
+      </div>
+
+      <h3>ansible-playbook options</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Validate YAML structure</span>
+ansible-playbook -i hosts.ini playbook.yml --syntax-check
+
+<span class="cm"># Dry run</span>
+ansible-playbook -i hosts.ini playbook.yml --check
+
+<span class="cm"># Show file diffs</span>
+ansible-playbook -i hosts.ini playbook.yml --diff
+
+<span class="cm"># Limit to subset of hosts</span>
+ansible-playbook -i hosts.ini playbook.yml --limit servers</pre>
+      </div>
+    </section>
+
+    <!-- D: WHY / WHAT / WHEN -->
+    <section class="section" id="whywhat">
+      <div class="section-header">
+        <span class="section-num">YOUR NOTES D</span>
+        <span class="section-title">Why / What / When</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <h3>What is Ansible?</h3>
+      <ul>
+        <li>Open-source IT automation, configuration management, and orchestration tool maintained by Red Hat.</li>
+        <li><strong>Agentless architecture</strong>: connects over SSH (Linux/Unix) or WinRM (Windows) — no agent on managed nodes.</li>
+        <li><strong>Playbooks</strong> are YAML files that declare desired state using tasks and modules. Collections provide reusable modules/roles.</li>
+      </ul>
+
+      <h3>Why use Ansible?</h3>
+      <ul>
+        <li>Simple and human-readable: YAML playbooks are easy to write and review.</li>
+        <li>Agentless: no persistent agents to manage on target hosts.</li>
+        <li>Idempotent: modules apply changes only when needed — safe for repeated runs.</li>
+        <li>Extensible: built-in modules plus Collections and Galaxy for community content.</li>
+        <li>Wide ecosystem: cloud providers, network devices, containers, and Windows.</li>
+      </ul>
+
+      <h3>When to use Ansible?</h3>
+      <ul>
+        <li>Provisioning infrastructure and configuring servers after provisioning.</li>
+        <li>Deploying applications where declarative configuration fits.</li>
+        <li>Automating routine tasks across many machines (patching, user management, packages).</li>
+        <li>Orchestrating multi-step workflows (deploy DB → migrate → deploy app → smoke tests).</li>
+        <li>Managing network devices where supported modules exist.</li>
+      </ul>
+
+      <h3>When NOT to use Ansible</h3>
+      <div class="box box-warn">
+        <div class="box-title">⚠ Limitations</div>
+        <ul style="margin:0;padding-left:18px">
+          <li>Real-time, low-latency orchestration — not optimized for low-latency control loops.</li>
+          <li>Very large-scale event-driven automation — consider dedicated event-driven platforms.</li>
+          <li>Where a persistent agent with push/pull is required — use Salt, Chef, or Puppet instead.</li>
+        </ul>
+      </div>
+
+      <h3>Key concepts</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Concept</th><th>Description</th></tr>
+          <tr><td><strong>Control node</strong></td><td>Machine where Ansible runs (workstation, CI, or dedicated host)</td></tr>
+          <tr><td><strong>Managed nodes</strong></td><td>Target hosts defined in inventory</td></tr>
+          <tr><td><strong>Inventory</strong></td><td>List of hosts — static file or dynamic from cloud APIs</td></tr>
+          <tr><td><strong>Playbook</strong></td><td>YAML document of plays; a play maps hosts → tasks</td></tr>
+          <tr><td><strong>Module</strong></td><td>Unit of work: <code>yum</code>, <code>apt</code>, <code>copy</code>, <code>template</code>…</td></tr>
+          <tr><td><strong>Role</strong></td><td>Reusable grouping of tasks, defaults, handlers, files, templates</td></tr>
+          <tr><td><strong>Collection</strong></td><td>Packaged set of plugins, modules, roles distributed via Galaxy</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- E: AWS EC2 LAB -->
+    <section class="section" id="awslab">
+      <div class="section-header">
+        <span class="section-num">YOUR NOTES E</span>
+        <span class="section-title">AWS EC2 Lab Setup</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>1 control node + 2 worker nodes — the simplest topology for learning Ansible on AWS.</p>
+
+      <h3>Step 1 — Generate SSH key pair</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-ec2-key
+<span class="cm"># Leave passphrase empty for lab use</span>
+<span class="cm"># Creates: ~/.ssh/ansible-ec2-key (private) + ~/.ssh/ansible-ec2-key.pub (public)</span></pre>
+      </div>
+
+      <h3>Step 2 — Launch control node EC2</h3>
+      <ul>
+        <li>Use Ubuntu or Amazon Linux AMI.</li>
+        <li>Import the public key when launching.</li>
+        <li>Allow SSH inbound on port 22 from your IP.</li>
+        <li>Install Ansible on this machine after login.</li>
+      </ul>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Login</span></div>
+        <pre>ssh -i ~/.ssh/ansible-ec2-key ubuntu@&lt;control-node-public-ip&gt;</pre>
+      </div>
+
+      <h3>Step 3 — Launch 2 worker nodes</h3>
+      <ul>
+        <li>Same VPC/subnet as the control node.</li>
+        <li>Attach the same key pair.</li>
+        <li>Allow SSH inbound from the control node security group.</li>
+        <li>Do <strong>not</strong> install Ansible on workers.</li>
+      </ul>
+
+      <h3>Step 4 — Add public key to each worker</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>On each worker node</span></div>
+        <pre>mkdir -p ~/.ssh && chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys
+<span class="cm"># Paste contents of ansible-ec2-key.pub, save and exit</span>
+chmod 600 ~/.ssh/authorized_keys</pre>
+      </div>
+
+      <h3>Step 5 — Verify SSH from control node</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>chmod 600 ~/.ssh/ansible-ec2-key
+ssh -i ~/.ssh/ansible-ec2-key ec2-user@&lt;worker-1-private-ip&gt;
+ssh -i ~/.ssh/ansible-ec2-key ec2-user@&lt;worker-2-private-ip&gt;</pre>
+      </div>
+      <div class="box box-info">
+        <div class="box-title">ℹ Default users</div>
+        Ubuntu images → <code>ubuntu</code> &nbsp;|&nbsp; Amazon Linux → <code>ec2-user</code>
+      </div>
+
+      <h3>Step 6 — Create inventory on control node</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">INI</span><span>inventory</span></div>
+        <pre>[workers]
+worker-1 ansible_host=&lt;worker-1-private-ip&gt; ansible_user=ec2-user
+worker-2 ansible_host=&lt;worker-2-private-ip&gt; ansible_user=ec2-user
+
+[workers:vars]
+ansible_ssh_private_key_file=~/.ssh/ansible-ec2-key</pre>
+      </div>
+
+      <h3>Step 7 — Test</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i inventory workers -m ping</pre>
+      </div>
+      <p>Both workers should respond with <code>pong</code> if SSH keys, security groups, and usernames are correct.</p>
     </section>
 
   </main>
