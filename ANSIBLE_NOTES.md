@@ -40,6 +40,93 @@
 - Role: reusable grouping of tasks, defaults, handlers, files, templates.
 - Collection: packaged set of plugins, modules, roles distributed via Galaxy.
 
+## AWS EC2 lab setup: 1 control node + 2 worker nodes
+
+This is a simple starter topology for learning Ansible on AWS:
+
+- 1 control node: install Ansible here and run playbooks from this instance.
+- 2 worker nodes: managed hosts that Ansible connects to over SSH.
+- 1 SSH key pair: use `ssh-keygen` to create a public/private key pair.
+
+### 1. Create the SSH key pair locally
+
+Generate a key pair for EC2 access:
+
+```
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-ec2-key
+```
+
+This creates:
+
+- Private key: `~/.ssh/ansible-ec2-key`
+- Public key: `~/.ssh/ansible-ec2-key.pub`
+
+Keep the private key secure. The public key is what you attach to the EC2 instances.
+
+### 2. Launch the control node on EC2
+
+Create one EC2 instance for the control node, ideally in the same VPC and subnet as the workers.
+
+- Use a Linux AMI such as Ubuntu or Amazon Linux.
+- Assign or import the public key when launching the instance.
+- Allow SSH inbound access on port 22 from your IP or from the worker subnet if needed.
+- Install Ansible on this machine after login.
+
+Example login:
+
+```
+ssh -i ~/.ssh/ansible-ec2-key ubuntu@<control-node-public-ip>
+```
+
+### 3. Launch 2 worker nodes on EC2
+
+Create two EC2 instances for the managed nodes.
+
+- Use the same VPC and subnet routing as the control node.
+- Attach the same EC2 key pair or import the same public key.
+- Allow SSH inbound access from the control node security group.
+- Do not install Ansible on the workers unless you specifically need it there.
+
+Suggested naming:
+
+- `worker-1`
+- `worker-2`
+
+### 4. Verify SSH access from the control node
+
+Copy the private key to the control node only if you generated it on your laptop and need it there for testing.
+
+```
+chmod 600 ~/.ssh/ansible-ec2-key
+ssh -i ~/.ssh/ansible-ec2-key ec2-user@<worker-1-private-ip>
+ssh -i ~/.ssh/ansible-ec2-key ec2-user@<worker-2-private-ip>
+```
+
+If you use Ubuntu images, the default user is usually `ubuntu`. For Amazon Linux, it is usually `ec2-user`.
+
+### 5. Create the inventory on the control node
+
+Use the workers' private IPs in an inventory file:
+
+```
+[workers]
+worker-1 ansible_host=<worker-1-private-ip> ansible_user=ec2-user
+worker-2 ansible_host=<worker-2-private-ip> ansible_user=ec2-user
+
+[workers:vars]
+ansible_ssh_private_key_file=~/.ssh/ansible-ec2-key
+```
+
+### 6. Test the architecture
+
+Run a ping test from the control node:
+
+```
+ansible -i inventory workers -m ping
+```
+
+If the SSH key, security groups, and usernames are correct, both worker nodes should respond successfully.
+
 ## Quick example
 
 Inventory (hosts):
