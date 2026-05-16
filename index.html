@@ -331,6 +331,35 @@
     flex-wrap: wrap;
   }
   .code-label .lang { color: var(--accent3); font-weight: 700; }
+
+  /* ─── COPY BUTTON ────────────────────────────────── */
+  .copy-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover {
+    color: var(--heading);
+    border-color: var(--accent3);
+    background: rgba(61,214,245,0.07);
+  }
+  .copy-btn.copied {
+    color: var(--green);
+    border-color: var(--green);
+    background: rgba(61,255,160,0.07);
+  }
   pre {
     padding: 14px 16px;
     overflow-x: auto;
