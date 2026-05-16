@@ -588,6 +588,7 @@
     <div class="sidebar-divider"></div>
     <div class="sidebar-label">Playbooks</div>
     <a href="#pb-variables"><span class="num">P1</span> Variables</a>
+    <a href="#pb-output"><span class="num">P2</span> Reading Output</a>
   </nav>
 
   <!-- MAIN -->
@@ -2610,6 +2611,125 @@ ansible-playbook -i hosts.ini playbook.yml -e "@vars/prod.yml"</pre>
         <div class="box-title">💡 Quick rule</div>
         <code>-e</code> always wins. <code>set_fact</code> and <code>register</code> win over static definitions.
         Role <code>defaults/</code> is intentionally the lowest so users can easily override them.
+      </div>
+    </section>
+
+    <!-- P2: READING PLAYBOOK OUTPUT -->
+    <section class="section" id="pb-output">
+      <div class="section-header">
+        <span class="section-num">PLAYBOOKS P2</span>
+        <span class="section-title">Reading Playbook Output</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>When you run <code>ansible-playbook</code>, the output tells you exactly what happened on each host. Here is a real run broken down line by line.</p>
+
+      <h3>The command</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i ../hosts.ini packages.yml -v</pre>
+      </div>
+      <ul>
+        <li><code>-i ../hosts.ini</code> &mdash; inventory is one directory up</li>
+        <li><code>packages.yml</code> &mdash; the playbook to run</li>
+        <li><code>-v</code> &mdash; verbose mode, shows full task output instead of just a summary</li>
+      </ul>
+
+      <h3>Line 1 &mdash; No config file found</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>No config file found; using defaults</pre>
+      </div>
+      <p>Ansible looked for <code>ansible.cfg</code> in the current directory, <code>~/.ansible.cfg</code>, and <code>/etc/ansible/ansible.cfg</code> and found none. It is using built-in defaults. This is just a notice, not an error. Fix it by creating an <code>ansible.cfg</code> in your project root.</p>
+
+      <h3>PLAY header</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>PLAY [Install Packages] ******</pre>
+      </div>
+      <p>Ansible is starting a play named <strong>Install Packages</strong> &mdash; this is the <code>name:</code> field at the top of your playbook. The asterisks just fill the line width.</p>
+
+      <h3>TASK [Gathering Facts]</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>TASK [Gathering Facts] ******
+ok: [worker-node-2]
+ok: [worker-node-1]</pre>
+      </div>
+      <p>Before running your tasks, Ansible automatically runs the <code>setup</code> module on every host to collect system information (OS, IP, memory, CPU, etc.) called <strong>facts</strong>. These are stored as variables you can use in your playbook.</p>
+      <ul>
+        <li><code>ok:</code> &mdash; facts were gathered successfully, nothing changed</li>
+        <li>Both nodes are contacted in parallel (default 5 forks)</li>
+        <li>Disable this with <code>gather_facts: false</code> in your play to speed things up when you don't need facts</li>
+      </ul>
+
+      <h3>TASK [Install Package]</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>TASK [Install Package] ******
+changed: [worker-node-1] => {...}
+changed: [worker-node-2] => {...}</pre>
+      </div>
+      <p><code>changed:</code> means the task actually did something &mdash; the package was not installed before, so Ansible installed it. The <code>=&gt; {...}</code> is the verbose JSON output showing the full result, only visible because you used <code>-v</code>.</p>
+
+      <h3>The verbose JSON result &mdash; key fields</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Field</th><th>What it means</th></tr>
+          <tr><td><code>changed</code></td><td><code>true</code> &mdash; the task made a change on the host</td></tr>
+          <tr><td><code>cache_updated</code></td><td><code>false</code> &mdash; apt cache was not refreshed (no <code>update_cache: yes</code> in the task)</td></tr>
+          <tr><td><code>cache_update_time</code></td><td>Unix timestamp of the last apt cache update</td></tr>
+          <tr><td><code>stdout</code></td><td>Full output from apt &mdash; what was downloaded, unpacked, installed</td></tr>
+          <tr><td><code>stderr</code></td><td>Any warnings printed to stderr. Here: <code>W: --force-yes is deprecated</code></td></tr>
+          <tr><td><code>stdout_lines</code></td><td>Same as stdout but split into a list, one entry per line</td></tr>
+          <tr><td><code>stderr_lines</code></td><td>Same as stderr but split into a list</td></tr>
+        </table>
+      </div>
+
+      <h3>The warning &mdash; --force-yes is deprecated</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>W: --force-yes is deprecated, use one of the options starting with --allow instead.</pre>
+      </div>
+      <p>This is a warning from <code>apt</code> itself, not from Ansible. It means the playbook (or an older Ansible version) is passing <code>--force-yes</code> to apt, which is deprecated in newer Ubuntu versions. It does not break anything here but can be silenced by upgrading Ansible or removing <code>force: yes</code> from the apt task if present.</p>
+
+      <h3>PLAY RECAP</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>PLAY RECAP ******
+worker-node-1   : ok=2  changed=1  unreachable=0  failed=0  skipped=0  rescued=0  ignored=0
+worker-node-2   : ok=2  changed=1  unreachable=0  failed=0  skipped=0  rescued=0  ignored=0</pre>
+      </div>
+      <p>The recap is a per-host summary of the entire run. Every column means something:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Column</th><th>What it means</th></tr>
+          <tr><td><code>ok</code></td><td>Tasks that ran successfully (including ones that made no change). Here: 2 &mdash; Gathering Facts + Install Package</td></tr>
+          <tr><td><code>changed</code></td><td>Tasks that actually modified something on the host. Here: 1 &mdash; the package was installed</td></tr>
+          <tr><td><code>unreachable</code></td><td>Hosts Ansible could not SSH into. 0 = all hosts were reachable</td></tr>
+          <tr><td><code>failed</code></td><td>Tasks that errored out and were not rescued. 0 = no failures</td></tr>
+          <tr><td><code>skipped</code></td><td>Tasks skipped due to a <code>when:</code> condition being false</td></tr>
+          <tr><td><code>rescued</code></td><td>Tasks that failed but were caught by a <code>rescue:</code> block</td></tr>
+          <tr><td><code>ignored</code></td><td>Tasks that failed but had <code>ignore_errors: true</code></td></tr>
+        </table>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 How to read the recap at a glance</div>
+        A healthy run has <code>failed=0</code> and <code>unreachable=0</code>.<br>
+        <code>changed=0</code> on a second run means the playbook is <strong>idempotent</strong> &mdash; everything was already in the desired state, nothing needed to change.
+      </div>
+
+      <h3>Task status colours</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Status</th><th>Colour</th><th>Meaning</th></tr>
+          <tr><td><code>ok</code></td><td>Green</td><td>Task ran, no change needed</td></tr>
+          <tr><td><code>changed</code></td><td>Yellow / Orange</td><td>Task ran and made a change</td></tr>
+          <tr><td><code>failed</code></td><td>Red</td><td>Task errored, play stops (unless ignored)</td></tr>
+          <tr><td><code>skipped</code></td><td>Cyan</td><td>Task was skipped due to <code>when:</code></td></tr>
+          <tr><td><code>unreachable</code></td><td>Red</td><td>Host could not be reached over SSH</td></tr>
+        </table>
       </div>
     </section>
 
