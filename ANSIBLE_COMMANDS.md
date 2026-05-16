@@ -11,12 +11,19 @@ Use this command for ad-hoc tasks on managed nodes.
 Examples:
 
 ```
-ansible -i hosts.ini servers -m ping
-ansible -i hosts.ini servers -m command -a "uptime"
-ansible -i hosts.ini servers -m shell -a "df -h"
+ansible -i hosts.ini servers -m ping #pinging to check if the devices are reachable
+ansible -i hosts.ini servers -m command -a "uptime" #uptime
+ansible -i hosts.ini servers -m shell -a "df -h" #disk space
+ansible -i hosts.ini servers -a "free -m" #free memory
+ansible -i hosts.i servers -a "sudo apt update"
 ```
 
 ![alt text](images/ansible-uptime.png)
+
+![alt text](images/disk_space_worker_nodes.png)
+
+![alt text](images/free_memory.png)
+
 
 What it does:
 
@@ -196,3 +203,32 @@ ansible-config dump --only-changed
 ## 12. Important note
 
 Ansible has many subcommands and plugin-specific options, so this guide covers the core commands you will use most often. If you want, this file can be expanded with a module-by-module reference later.
+
+## 13. Common flags and short options
+
+This short reference explains common single-letter and long-form flags you will see with `ansible` and `ansible-playbook`.
+
+```
+-m                Module name (ad-hoc). Example: ansible -i hosts.ini web -m ping
+-a                Module arguments (ad-hoc). Example: ansible -i hosts.ini web -m command -a "uptime"
+-i                Inventory file or comma-separated hosts. Example: ansible-playbook -i hosts.ini site.yml
+-e / --extra-vars Pass extra variables. Example: ansible-playbook -i hosts.ini site.yml -e "env=prod version=1.2"
+-u                Remote SSH user. Example: ansible -i hosts.ini all -m ping -u ubuntu
+-b / --become     Run tasks with privilege escalation (sudo). Example: ansible-playbook -i hosts.ini site.yml -b
+-k / --ask-pass   Prompt for SSH password. Example: ansible -i hosts.ini all -m ping -k
+-K / --ask-become-pass Prompt for privilege escalation password. Example: ansible-playbook -i hosts.ini site.yml -b -K
+-f                Forks (parallelism). Example: ansible -i hosts.ini all -m ping -f 20
+-c                Connection type (ssh, local, paramiko). Example: ansible -i hosts.ini localhost -c local -m command -a "whoami"
+-t / --tags       Run only tasks with specified tags (playbook). Example: ansible-playbook -i hosts.ini site.yml -t install
+--limit / -l      Limit hosts or groups to run on. Example: ansible-playbook -i hosts.ini site.yml --limit webservers
+--check           Dry run (do not make changes). Example: ansible-playbook -i hosts.ini site.yml --check
+--diff            Show file differences for changed files. Example: ansible-playbook -i hosts.ini site.yml --diff
+--start-at-task   Start playbook run at a given task name. Example: ansible-playbook -i hosts.ini site.yml --start-at-task "Configure app"
+```
+
+Notes:
+- Many short flags have equivalent long forms (`-e` ⇄ `--extra-vars`, `-b` ⇄ `--become`).
+- Flags may differ slightly between `ansible` (ad-hoc) and `ansible-playbook` — check `ansible --help` or `ansible-playbook --help` for command-specific options.
+- For complex `-e` values use JSON or a file: `-e '{"var": "value"}'` or `-e @vars.yml`.
+
+If you'd like, I can move this section earlier in the file or expand entries with more examples.
