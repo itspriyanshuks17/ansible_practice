@@ -1956,57 +1956,176 @@ ansible -m ping all</pre>
       </div>
 
       <h3>Flags — the letters after <code>-</code></h3>
-      <p>These flags are used with <code>ansible</code> and <code>ansible-playbook</code>. Understanding each one is key to running commands confidently.</p>
+      <p>Common single-letter and long-form flags for <code>ansible</code> and <code>ansible-playbook</code>, each with a detailed example.</p>
 
-      <div class="table-wrap">
-        <table>
-          <tr><th>Flag</th><th>Long form</th><th>Used with</th><th>What it does</th></tr>
-          <tr><td><code>-i</code></td><td><code>--inventory</code></td><td>both</td><td>Path to inventory file or directory. Overrides <code>ansible.cfg</code>.<br><span style="color:var(--muted);font-size:12px">ansible -i hosts.ini all -m ping</span></td></tr>
-          <tr><td><code>-m</code></td><td><code>--module-name</code></td><td><code>ansible</code></td><td>Module to run on the managed nodes.<br><span style="color:var(--muted);font-size:12px">ansible all -m ping &nbsp;|&nbsp; ansible all -m shell</span></td></tr>
-          <tr><td><code>-a</code></td><td><code>--args</code></td><td><code>ansible</code></td><td>Arguments passed to the module.<br><span style="color:var(--muted);font-size:12px">ansible all -m command -a "uptime"</span></td></tr>
-          <tr><td><code>-e</code></td><td><code>--extra-vars</code></td><td>both</td><td>Pass variables at runtime. Highest precedence — overrides everything.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -e "env=prod port=9090"<br>ansible-playbook site.yml -e "@vars/prod.yml"</span></td></tr>
-          <tr><td><code>-b</code></td><td><code>--become</code></td><td>both</td><td>Enable privilege escalation (sudo). Runs tasks as root by default.<br><span style="color:var(--muted);font-size:12px">ansible all -m apt -a "name=nginx state=present" -b</span></td></tr>
-          <tr><td><code>-u</code></td><td><code>--user</code></td><td>both</td><td>SSH username to connect as. Overrides <code>remote_user</code> in <code>ansible.cfg</code>.<br><span style="color:var(--muted);font-size:12px">ansible all -u ubuntu -m ping</span></td></tr>
-          <tr><td><code>-k</code></td><td><code>--ask-pass</code></td><td>both</td><td>Prompt for SSH password instead of using a key.<br><span style="color:var(--muted);font-size:12px">ansible all -k -m ping</span></td></tr>
-          <tr><td><code>-K</code></td><td><code>--ask-become-pass</code></td><td>both</td><td>Prompt for the sudo/become password on the remote host.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -b -K</span></td></tr>
-          <tr><td><code>-v</code></td><td><code>--verbose</code></td><td>both</td><td>Increase output verbosity. Stack for more detail: <code>-v</code> → <code>-vv</code> → <code>-vvv</code> → <code>-vvvv</code> (connection debug).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -vvv</span></td></tr>
-          <tr><td><code>-l</code></td><td><code>--limit</code></td><td>both</td><td>Restrict the run to a subset of hosts or groups.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -l web1<br>ansible-playbook site.yml -l webservers</span></td></tr>
-          <tr><td><code>-t</code></td><td><code>--tags</code></td><td><code>ansible-playbook</code></td><td>Run only tasks that have the specified tag(s).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -t install,config</span></td></tr>
-          <tr><td><code>-C</code></td><td><code>--check</code></td><td><code>ansible-playbook</code></td><td>Dry-run mode — predicts changes without applying them.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -C</span></td></tr>
-          <tr><td><code>-D</code></td><td><code>--diff</code></td><td><code>ansible-playbook</code></td><td>Show a diff of file changes (works well with <code>-C</code>).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -C -D</span></td></tr>
-          <tr><td><code>-f</code></td><td><code>--forks</code></td><td>both</td><td>Number of parallel processes (default: 5). Increase for large inventories.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -f 20</span></td></tr>
-          <tr><td><code>-c</code></td><td><code>--connection</code></td><td>both</td><td>Connection type to use: <code>ssh</code> (default), <code>local</code>, <code>winrm</code>, <code>docker</code>.<br><span style="color:var(--muted);font-size:12px">ansible localhost -c local -m ping</span></td></tr>
-          <tr><td><code>-o</code></td><td><code>--one-line</code></td><td><code>ansible</code></td><td>Condense output to one line per host. Useful for quick status checks.<br><span style="color:var(--muted);font-size:12px">ansible all -m ping -o</span></td></tr>
-          <tr><td><code>-T</code></td><td><code>--timeout</code></td><td>both</td><td>SSH connection timeout in seconds (default: 10).<br><span style="color:var(--muted);font-size:12px">ansible all -T 30 -m ping</span></td></tr>
-          <tr><td><code>-U</code></td><td><code>--url</code></td><td><code>ansible-pull</code></td><td>Git repo URL to pull the playbook from.<br><span style="color:var(--muted);font-size:12px">ansible-pull -U https://github.com/org/repo.git site.yml</span></td></tr>
-        </table>
+      <h3><code>-m</code> &nbsp;&mdash;&nbsp; Module name</h3>
+      <p>Specifies which Ansible module to run on the managed nodes. Used with ad-hoc <code>ansible</code> commands.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i hosts.ini web -m ping
+ansible -i hosts.ini web -m shell
+ansible -i hosts.ini web -m command</pre>
+      </div>
+
+      <h3><code>-a</code> &nbsp;&mdash;&nbsp; Module arguments</h3>
+      <p>Passes arguments to the module specified by <code>-m</code>. The string is interpreted by the module.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i hosts.ini web -m command -a "uptime"
+ansible -i hosts.ini web -m shell -a "df -h"
+ansible -i hosts.ini web -m apt -a "name=nginx state=present" -b</pre>
+      </div>
+
+      <h3><code>-i</code> &nbsp;&mdash;&nbsp; Inventory</h3>
+      <p>Path to the inventory file or a comma-separated list of hosts. Overrides the <code>inventory</code> setting in <code>ansible.cfg</code>.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i hosts.ini site.yml
+ansible-playbook -i inventories/production/hosts.ini site.yml
+
+<span class="cm"># Inline single host (note the trailing comma)</span>
+ansible-playbook -i "54.12.34.56," site.yml -u ubuntu</pre>
+      </div>
+
+      <h3><code>-e</code> / <code>--extra-vars</code> &nbsp;&mdash;&nbsp; Extra variables</h3>
+      <p>Passes variables at runtime. These have the <strong>highest precedence</strong> and override everything else — inventory vars, group_vars, play vars, and role defaults.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Pass key=value pairs</span>
+ansible-playbook -i hosts.ini site.yml -e "env=prod version=1.2"
+
+<span class="cm"># Pass multiple vars</span>
+ansible-playbook -i hosts.ini site.yml -e "env=prod" -e "port=9090"
+
+<span class="cm"># Pass from a vars file (note the @ prefix)</span>
+ansible-playbook -i hosts.ini site.yml -e "@vars/prod.yml"</pre>
+      </div>
+
+      <h3><code>-u</code> &nbsp;&mdash;&nbsp; Remote user</h3>
+      <p>SSH username to connect as. Overrides <code>remote_user</code> in <code>ansible.cfg</code> and <code>ansible_user</code> in inventory.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i hosts.ini all -m ping -u ubuntu
+ansible -i hosts.ini all -m ping -u ec2-user
+ansible-playbook -i hosts.ini site.yml -u deploy</pre>
+      </div>
+
+      <h3><code>-b</code> / <code>--become</code> &nbsp;&mdash;&nbsp; Privilege escalation</h3>
+      <p>Runs tasks with sudo (or another become method). Required for tasks that need root — installing packages, writing to system dirs, managing services.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i hosts.ini site.yml -b
+
+<span class="cm"># Ad-hoc: install a package as root</span>
+ansible -i hosts.ini all -m apt -a "name=nginx state=present" -b</pre>
+      </div>
+
+      <h3><code>-k</code> / <code>--ask-pass</code> &nbsp;&mdash;&nbsp; SSH password prompt</h3>
+      <p>Prompts for the SSH login password instead of using a key file. Useful when no key is set up yet.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i hosts.ini all -m ping -k</pre>
+      </div>
+
+      <h3><code>-K</code> / <code>--ask-become-pass</code> &nbsp;&mdash;&nbsp; Sudo password prompt</h3>
+      <p>Prompts for the privilege escalation (sudo) password on the remote host. Use together with <code>-b</code>.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i hosts.ini site.yml -b -K</pre>
+      </div>
+
+      <div class="box box-warn">
+        <div class="box-title">⚠ Case matters: -k vs -K</div>
+        <code>-k</code> (lowercase) = SSH login password &nbsp;&nbsp;|&nbsp;&nbsp; <code>-K</code> (uppercase) = sudo/become password
+      </div>
+
+      <h3><code>-f</code> &nbsp;&mdash;&nbsp; Forks (parallelism)</h3>
+      <p>Number of hosts Ansible talks to in parallel. Default is <strong>5</strong>. Increase for large inventories to speed up runs.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i hosts.ini all -m ping -f 20
+ansible-playbook -i hosts.ini site.yml -f 50</pre>
+      </div>
+
+      <h3><code>-c</code> / <code>--connection</code> &nbsp;&mdash;&nbsp; Connection type</h3>
+      <p>Sets the transport used to connect to managed nodes. Default is <code>ssh</code>. Use <code>local</code> to run on the control node itself without SSH.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Run on localhost without SSH</span>
+ansible -i hosts.ini localhost -c local -m command -a "whoami"
+
+<span class="cm"># Other types: paramiko, winrm, docker</span>
+ansible -i hosts.ini windows_host -c winrm -m win_ping</pre>
+      </div>
+
+      <h3><code>-t</code> / <code>--tags</code> &nbsp;&mdash;&nbsp; Run tagged tasks only</h3>
+      <p>Runs only the tasks in a playbook that have the specified tag(s). Useful for partial deployments — e.g. only run the install step, skip config and restart.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Run only tasks tagged 'install'</span>
+ansible-playbook -i hosts.ini site.yml -t install
+
+<span class="cm"># Run multiple tags</span>
+ansible-playbook -i hosts.ini site.yml -t "install,config"
+
+<span class="cm"># Skip a tag</span>
+ansible-playbook -i hosts.ini site.yml --skip-tags deploy
+
+<span class="cm"># List all available tags without running</span>
+ansible-playbook -i hosts.ini site.yml --list-tags</pre>
+      </div>
+
+      <h3><code>-l</code> / <code>--limit</code> &nbsp;&mdash;&nbsp; Limit hosts</h3>
+      <p>Restricts the playbook or ad-hoc command to a subset of the inventory — a single host, a group, or a pattern.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Limit to a single host</span>
+ansible-playbook -i hosts.ini site.yml --limit web1
+
+<span class="cm"># Limit to a group</span>
+ansible-playbook -i hosts.ini site.yml --limit webservers
+
+<span class="cm"># Limit using a pattern (all hosts starting with web)</span>
+ansible-playbook -i hosts.ini site.yml -l "web*"</pre>
+      </div>
+
+      <h3><code>--check</code> &nbsp;&mdash;&nbsp; Dry run</h3>
+      <p>Runs the playbook without making any actual changes. Ansible reports what <em>would</em> change. Not all modules support check mode fully.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i hosts.ini site.yml --check</pre>
+      </div>
+
+      <h3><code>--diff</code> &nbsp;&mdash;&nbsp; Show file differences</h3>
+      <p>Shows a unified diff for any files that would be changed (e.g. by <code>copy</code> or <code>template</code> tasks). Pair with <code>--check</code> to preview changes safely before applying.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Preview what files would change and how</span>
+ansible-playbook -i hosts.ini site.yml --check --diff</pre>
+      </div>
+
+      <h3><code>--start-at-task</code> &nbsp;&mdash;&nbsp; Resume from a task</h3>
+      <p>Starts the playbook run at a specific task name, skipping everything before it. Useful when a run failed mid-way and you want to resume without re-running completed tasks.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible-playbook -i hosts.ini site.yml --start-at-task "Configure app"
+ansible-playbook -i hosts.ini site.yml --start-at-task "Start nginx"</pre>
       </div>
 
       <div class="box box-tip">
-        <div class="box-title">💡 Case matters</div>
-        <code>-k</code> = ask SSH password &nbsp;|&nbsp; <code>-K</code> = ask sudo password<br>
-        <code>-c</code> = connection type &nbsp;|&nbsp; <code>-C</code> = check (dry-run)<br>
-        <code>-d</code> does not exist &nbsp;|&nbsp; <code>-D</code> = diff mode<br>
-        <code>-t</code> = tags &nbsp;|&nbsp; <code>-T</code> = timeout
-      </div>
+        <div class="box-title">💡 Combining flags — real examples</div>
+        <pre style="margin:8px 0 0;background:transparent;padding:0;font-size:12px">
+<span class="cm"># Dry-run + diff + verbose + limit to one host</span>
+ansible-playbook -i hosts.ini site.yml --check --diff -v -l web1
 
-      <h3>Combining flags — real examples</h3>
-      <div class="code-block">
-        <div class="code-label"><span class="lang">BASH</span></div>
-        <pre><span class="cm"># Dry-run with diff, verbose, limit to one host</span>
-ansible-playbook -i hosts.ini site.yml -C -D -v -l web1
-
-<span class="cm"># Override user + key + extra var at runtime</span>
+<span class="cm"># Override user + extra var + become</span>
 ansible-playbook -i hosts.ini site.yml -u ubuntu -e "env=staging" -b
 
-<span class="cm"># Run only 'deploy' tag on 20 parallel forks</span>
-ansible-playbook -i hosts.ini site.yml -t deploy -f 20
+<span class="cm"># Run only deploy tag, 20 forks, prompt for sudo</span>
+ansible-playbook -i hosts.ini site.yml -t deploy -f 20 -b -K
 
-<span class="cm"># Ad-hoc: install nginx as sudo, prompt for sudo password</span>
-ansible -i hosts.ini all -m apt -a "name=nginx state=present" -b -K
-
-<span class="cm"># One-line ping check across all hosts</span>
-ansible -i hosts.ini all -m ping -o</pre>
+<span class="cm"># Resume a failed run from a specific task</span>
+ansible-playbook -i hosts.ini site.yml --start-at-task "Deploy app code" -l web1</pre>
       </div>
 
       <h3>Recommended workflow order</h3>
