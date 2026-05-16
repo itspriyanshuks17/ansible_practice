@@ -1,0 +1,8 @@
+- name: Create a file from host to nodes
+  hosts: servers
+  become: true
+
+
+  tasks:
+    - name: Create file
+      command: touch file_from_hosts_1.txt

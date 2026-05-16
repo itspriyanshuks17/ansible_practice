@@ -1,0 +1,8 @@
+- name: Hello Dosto
+  hosts: servers
+  become: true
+
+
+  tasks:
+    - name: Greet user
+      shell: echo "Hello from Priyanshu(Hosts)" >> echo.txt

@@ -1,0 +1,29 @@
+---
+- name: Install and start Nginx on webservers
+  hosts: webservers
+  become: true
+  vars:
+    nginx_package: nginx
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_facts['pkg_mgr'] == 'apt'
+
+    - name: Install Nginx
+      apt:
+        name: "{{ nginx_package }}"
+        state: present
+        force: yes
+
+    - name: Ensure Nginx is started and enabled
+      service:
+        name: "{{ nginx_package }}"
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: "{{ nginx_package }}"
+        state: restarted

@@ -1,0 +1,12 @@
+- name: Create a file from host to nodes
+  hosts: servers
+  become: true
+
+  vars:
+    name: Priyanshu
+
+    
+  tasks:
+    - name: Create file
+      shell: echo "Hello from {{name}}" >> echo.txt
+
