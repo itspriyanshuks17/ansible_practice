@@ -795,27 +795,41 @@ ansible all -i inventory.ini -m ping --private-key=~/.ssh/id_rsa</pre>
         <pre><span class="cm"># Ping all hosts</span>
 ansible all -m ping
 
-<span class="cm"># Run shell command</span>
-ansible webservers -m shell -a "uptime"
-ansible webservers -m command -a "df -h"
+<span class="cm"># Check uptime on all servers</span>
+ansible -i hosts.ini servers -m command -a "uptime"
 
-<span class="cm"># Install a package (Ubuntu)</span>
-ansible webservers -m apt -a "name=nginx state=present" -b
+<span class="cm"># Check disk space</span>
+ansible -i hosts.ini servers -m shell -a "df -h"
+
+<span class="cm"># Check free memory</span>
+ansible -i hosts.ini servers -a "free -m"
+
+<span class="cm"># Run apt update (no become needed just to update cache)</span>
+ansible -i hosts.ini servers -a "sudo apt update"
+
+<span class="cm"># Install a package with privilege escalation</span>
+ansible -i hosts.ini servers -a "apt-get install -y nginx" --become
+
+<span class="cm"># Install using the apt module (preferred — idempotent)</span>
+ansible -i hosts.ini servers -m apt -a "name=nginx state=present" -b
 
 <span class="cm"># Install a package (RHEL/Amazon Linux)</span>
-ansible dbservers -m yum -a "name=httpd state=present" -b
+ansible -i hosts.ini servers -m yum -a "name=httpd state=present" -b
 
 <span class="cm"># Copy a file</span>
 ansible all -m copy -a "src=/tmp/app.conf dest=/etc/app.conf"
 
-<span class="cm"># Gather facts about hosts</span>
-ansible web1 -m setup
+<span class="cm"># Gather facts</span>
+ansible -i hosts.ini servers -m setup
 
 <span class="cm"># Reboot servers</span>
-ansible all -m reboot -b
+ansible all -m reboot -b</pre>
+      </div>
 
-<span class="cm"># Check free memory</span>
-ansible all -m shell -a "free -m"</pre>
+      <div class="box box-info">
+        <div class="box-title">&#8505; shell -a vs -a (command module)</div>
+        <code>-a "cmd"</code> without <code>-m</code> uses the <code>command</code> module by default — no shell features like pipes or redirects.<br>
+        Use <code>-m shell -a "cmd"</code> when you need pipes (<code>|</code>), redirects (<code>&gt;</code>), or environment variable expansion.
       </div>
 
       <div class="table-wrap">
@@ -824,7 +838,7 @@ ansible all -m shell -a "free -m"</pre>
           <tr><td><code>-m</code></td><td>Module name</td></tr>
           <tr><td><code>-a</code></td><td>Module arguments</td></tr>
           <tr><td><code>-i</code></td><td>Inventory file path</td></tr>
-          <tr><td><code>-b</code></td><td>Become (sudo)</td></tr>
+          <tr><td><code>-b</code> / <code>--become</code></td><td>Privilege escalation (sudo) — required for installing packages, writing to system dirs</td></tr>
           <tr><td><code>-u</code></td><td>Remote user</td></tr>
           <tr><td><code>--private-key</code></td><td>SSH private key path</td></tr>
           <tr><td><code>-v / -vvv</code></td><td>Verbosity (increase for debug)</td></tr>
@@ -1638,8 +1652,9 @@ ansible-playbook site.yml --list-tags</pre>
 │  Ansible (ansible-playbook)                 │
 │  └── Install software                       │
 │  └── Configure services                     │
-│  └── Deploy application code               │
-└─────────────────────────────────────────────┘</pre>
+│  └── Deploy application code                │
+└─────────────────────────────────────────────┘
+</pre>
       </div>
 
       <h3>Terraform: Provision EC2 Instances</h3>
@@ -2290,6 +2305,7 @@ ansible-playbook -i hosts.ini site.yml --start-at-task "Deploy app code" -l web1
       <h3>Recommended workflow order</h3>
       <ol>
         <li>Check inventory — <code>ansible-inventory -i hosts.ini --graph</code></li>
+        <li>Preview which hosts will be targeted — <code>ansible-playbook -i hosts.ini site.yml --list-hosts</code></li>
         <li>Check active config — <code>ansible-config dump --only-changed</code></li>
         <li>Read module docs — <code>ansible-doc &lt;module&gt;</code></li>
         <li>Test connectivity — <code>ansible -i hosts.ini all -m ping -o</code></li>
@@ -2844,7 +2860,34 @@ ansible -i ../hosts.ini servers -m setup -a "filter=ansible_default_ipv4"
 ansible -i ../hosts.ini servers -m setup -a "filter=ansible_mem*"
 
 <span class="cm"># Only CPU facts</span>
-ansible -i ../hosts.ini servers -m setup -a "filter=ansible_processor*"</pre>
+ansible -i ../hosts.ini servers -m setup -a "filter=ansible_processor*"
+
+<span class="cm"># Write per-host JSON fact files to a directory</span>
+ansible -i ../hosts.ini servers -m setup --tree /tmp/facts</pre>
+      </div>
+
+      <h3>Using facts in playbooks</h3>
+      <p>Facts gathered by <code>setup</code> are available as variables in any playbook task or template.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>OS conditionals</span></div>
+        <pre><span class="cm"># Run only on Debian-family (Ubuntu, Debian, Mint...)</span>
+- <span class="kw">name:</span> <span class="str">Install package on Debian family</span>
+  <span class="kw">apt:</span>
+    <span class="kw">name:</span> htop
+    <span class="kw">state:</span> present
+  <span class="kw">when:</span> ansible_os_family == <span class="str">"Debian"</span>
+
+<span class="cm"># Run only on exact distribution</span>
+- <span class="kw">name:</span> <span class="str">Ubuntu-only task</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"This is Ubuntu"</span>
+  <span class="kw">when:</span> ansible_distribution == <span class="str">"Ubuntu"</span>
+
+<span class="cm"># Version-based condition — Ubuntu 20 or newer only</span>
+- <span class="kw">name:</span> <span class="str">Run on Ubuntu 20+</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"Modern Ubuntu"</span>
+  <span class="kw">when:</span> ansible_distribution == <span class="str">"Ubuntu"</span> <span class="kw">and</span> ansible_distribution_major_version | int >= <span class="num">20</span></pre>
       </div>
 
       <h3>Most useful facts reference</h3>
