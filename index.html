@@ -585,6 +585,9 @@
     <a href="#commands"><span class="num">C</span> Commands Ref</a>
     <a href="#whywhat"><span class="num">D</span> Why / What / When</a>
     <a href="#awslab"><span class="num">E</span> AWS EC2 Lab</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Playbooks</div>
+    <a href="#pb-variables"><span class="num">P1</span> Variables</a>
   </nav>
 
   <!-- MAIN -->
@@ -2443,6 +2446,171 @@ ansible_ssh_private_key_file=~/.ssh/ansible-ec2-key</pre>
         <pre>ansible -i inventory workers -m ping</pre>
       </div>
       <p>Both workers should respond with <code>pong</code> if SSH keys, security groups, and usernames are correct.</p>
+    </section>
+
+    <!-- P1: PLAYBOOK VARIABLES -->
+    <section class="section" id="pb-variables">
+      <div class="section-header">
+        <span class="section-num">PLAYBOOKS P1</span>
+        <span class="section-title">Variables in Playbooks</span>
+        <span class="level-badge intermediate">Intermediate</span>
+      </div>
+
+      <p>Variables let you write one playbook that works across different environments, hosts, and configurations by replacing hardcoded values with named placeholders.</p>
+
+      <h3>1. Inline vars — defined in the play</h3>
+      <p>The simplest way. Defined under <code>vars:</code> in the play header. Scoped to that play only.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>playbooks/vars.yml</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Demo inline vars</span>
+  <span class="kw">hosts:</span> servers
+  <span class="kw">become:</span> <span class="num">true</span>
+
+  <span class="kw">vars:</span>
+    <span class="kw">username:</span> <span class="str">priyanshu</span>
+    <span class="kw">app_port:</span> <span class="num">8080</span>
+    <span class="kw">packages:</span>
+      - nginx
+      - git
+      - curl
+
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Print username and port</span>
+      <span class="kw">debug:</span>
+        <span class="kw">msg:</span> <span class="str">"User: {{ username }}, Port: {{ app_port }}"</span>
+
+    - <span class="kw">name:</span> <span class="str">Install packages</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> <span class="str">"{{ item }}"</span>
+        <span class="kw">state:</span> present
+      <span class="kw">loop:</span> <span class="str">"{{ packages }}"</span></pre>
+      </div>
+
+      <h3>2. vars_files — load from an external file</h3>
+      <p>Keeps variables out of the playbook. Good for separating config from logic, and for having per-environment files.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>vars/app.yml</span></div>
+        <pre><span class="kw">username:</span> <span class="str">priyanshu</span>
+<span class="kw">app_port:</span> <span class="num">8080</span>
+<span class="kw">app_dir:</span> <span class="str">/var/www/app</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>playbook using vars_files</span></div>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Load vars from file</span>
+  <span class="kw">hosts:</span> servers
+  <span class="kw">become:</span> <span class="num">true</span>
+  <span class="kw">vars_files:</span>
+    - vars/app.yml              <span class="cm"># loaded before tasks run</span>
+
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Create app directory</span>
+      <span class="kw">file:</span>
+        <span class="kw">path:</span> <span class="str">"{{ app_dir }}"</span>
+        <span class="kw">state:</span> directory</pre>
+      </div>
+
+      <h3>3. -e / --extra-vars — passed at runtime</h3>
+      <p>Highest precedence. Overrides everything — inline vars, vars_files, group_vars, host_vars. Useful for one-off overrides without editing any file.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Pass a single value</span>
+ansible-playbook -i hosts.ini playbook.yml -e "username=deploy"
+
+<span class="cm"># Pass multiple values</span>
+ansible-playbook -i hosts.ini playbook.yml -e "username=deploy app_port=9090"
+
+<span class="cm"># Pass from a file</span>
+ansible-playbook -i hosts.ini playbook.yml -e "@vars/prod.yml"</pre>
+      </div>
+
+      <h3>4. set_fact — set a variable dynamically during a task</h3>
+      <p>Creates a variable mid-play from computed values or task output. Available to all subsequent tasks in that play.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Set a dynamic variable</span>
+  <span class="kw">set_fact:</span>
+    <span class="kw">deploy_path:</span> <span class="str">"/var/www/{{ username }}/app"</span>
+
+- <span class="kw">name:</span> <span class="str">Use the dynamic variable</span>
+  <span class="kw">file:</span>
+    <span class="kw">path:</span> <span class="str">"{{ deploy_path }}"</span>
+    <span class="kw">state:</span> directory</pre>
+      </div>
+
+      <h3>5. register — capture task output as a variable</h3>
+      <p>Saves the result of any task into a variable. The result object has keys like <code>.stdout</code>, <code>.stderr</code>, <code>.rc</code> (return code), <code>.changed</code>.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Get current date</span>
+  <span class="kw">command:</span> date
+  <span class="kw">register:</span> current_date
+
+- <span class="kw">name:</span> <span class="str">Print the date</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"Today is {{ current_date.stdout }}"</span>
+
+- <span class="kw">name:</span> <span class="str">Check if a file exists</span>
+  <span class="kw">stat:</span>
+    <span class="kw">path:</span> <span class="str">/etc/app.conf</span>
+  <span class="kw">register:</span> conf_file
+
+- <span class="kw">name:</span> <span class="str">Only run if file exists</span>
+  <span class="kw">debug:</span>
+    <span class="kw">msg:</span> <span class="str">"Config found"</span>
+  <span class="kw">when:</span> conf_file.stat.exists</pre>
+      </div>
+
+      <h3>6. Variable types</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre><span class="kw">vars:</span>
+  <span class="cm"># String</span>
+  <span class="kw">username:</span> <span class="str">priyanshu</span>
+
+  <span class="cm"># Number</span>
+  <span class="kw">app_port:</span> <span class="num">8080</span>
+
+  <span class="cm"># Boolean</span>
+  <span class="kw">ssl_enabled:</span> <span class="num">true</span>
+
+  <span class="cm"># List</span>
+  <span class="kw">packages:</span>
+    - nginx
+    - git
+    - curl
+
+  <span class="cm"># Dictionary / map</span>
+  <span class="kw">db:</span>
+    <span class="kw">host:</span> <span class="str">localhost</span>
+    <span class="kw">port:</span> <span class="num">5432</span>
+    <span class="kw">name:</span> <span class="str">myapp</span>
+
+<span class="cm"># Accessing dictionary keys:</span>
+<span class="cm"># {{ db.host }}  or  {{ db['host'] }}</span></pre>
+      </div>
+
+      <h3>7. Variable precedence (low → high)</h3>
+      <p>When the same variable is defined in multiple places, Ansible uses this order — higher wins:</p>
+      <ol>
+        <li>Role defaults &nbsp;<code>defaults/main.yml</code></li>
+        <li>Inventory file vars</li>
+        <li><code>group_vars/all</code></li>
+        <li><code>group_vars/&lt;group&gt;</code></li>
+        <li><code>host_vars/&lt;host&gt;</code></li>
+        <li>Play <code>vars:</code></li>
+        <li><code>vars_files:</code></li>
+        <li>Role vars &nbsp;<code>vars/main.yml</code></li>
+        <li><code>set_fact</code> / <code>register</code></li>
+        <li><strong>Extra vars <code>-e</code></strong> &nbsp;— always wins</li>
+      </ol>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 Quick rule</div>
+        <code>-e</code> always wins. <code>set_fact</code> and <code>register</code> win over static definitions.
+        Role <code>defaults/</code> is intentionally the lowest so users can easily override them.
+      </div>
     </section>
 
   </main>
