@@ -16,6 +16,7 @@ ansible -i hosts.ini servers -m command -a "uptime" #uptime
 ansible -i hosts.ini servers -m shell -a "df -h" #disk space
 ansible -i hosts.ini servers -a "free -m" #free memory
 ansible -i hosts.i servers -a "sudo apt update"
+ansible -i hosts.ini servers -a "apt-get install -y nginx" --become #install nginx with privilege escalation
 ```
 
 ![alt text](images/ansible-uptime.png)
@@ -37,6 +38,7 @@ Useful options:
 - `-m ping`: run the `ping` module.
 - `-a "..."`: pass arguments to the module.
 - `-u ubuntu`: override the SSH user.
+- `-b` / `--become`: run commands with privilege escalation (sudo). Use when installing packages or performing root-only actions.
 - `--ask-become-pass`: prompt for sudo password if needed.
 
 ## 2. `ansible-playbook`
