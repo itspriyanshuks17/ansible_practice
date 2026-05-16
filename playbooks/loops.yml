@@ -1,0 +1,26 @@
+- name: Installing packages using loops
+  hosts: servers
+  become: true
+
+  vars:
+    packages:
+      - git
+      - htop
+      - tree
+      - curl
+      - vim
+      - wget
+      - apache2
+
+  tasks:
+    - name: Install packages using loop
+      apt:
+        name: "{{ item }}"
+        state: present
+        force: yes
+      loop: "{{ packages }}"
+
+    - name: Show installed packages
+      debug:
+        msg: "Installed {{ item }}"
+      loop: "{{ packages }}"
