@@ -1,0 +1,55 @@
+---
+- name: Conditions examples
+  hosts: servers
+  become: true
+  vars:
+    packages:
+      - curl
+      - git
+  tasks:
+    - name: Show OS family and distribution
+      debug:
+        msg: "os_family={{ ansible_os_family }}, distro={{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Install htop on Debian-family
+      apt:
+        name: htop
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure httpd on RedHat
+      yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Check for greeting file
+      stat:
+        path: /tmp/greet.txt
+      register: greet_stat
+
+    - name: Create greeting if absent (idempotent)
+      copy:
+        dest: /tmp/greet.txt
+        content: "Hello from {{ inventory_hostname }}\n"
+      when: not greet_stat.stat.exists
+
+    - name: Install packages when distro >= 20 (example using version test)
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages }}"
+      when: ansible_distribution_version is version('20.04', '>=')
+
+    - name: Run command and control failure conditions
+      command: /bin/false
+      register: rc
+      failed_when: rc.rc not in [0,2]
+
+    - name: Conditional per-loop item
+      debug:
+        msg: "Would install {{ item.name }}"
+      loop:
+        - { name: 'apache2', osfamily: 'Debian' }
+        - { name: 'httpd', osfamily: 'RedHat' }
+      when: ansible_os_family == item.osfamily
