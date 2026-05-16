@@ -835,19 +835,23 @@ ansible all -m shell -a "free -m"</pre>
         <span class="level-badge beginner">Beginner</span>
       </div>
 
-      <p>Playbooks are YAML files that define a series of plays. Each play maps a group of hosts to a set of tasks. This is Ansible's core automation mechanism.</p>
+      <p>A playbook is a YAML file containing one or more <strong>plays</strong>. Each play maps a set of hosts to an ordered list of tasks. Playbooks are Ansible's primary automation mechanism — repeatable, readable, and idempotent.</p>
 
-      <h3>Anatomy of a Playbook</h3>
+      <h3>Structure of a playbook</h3>
+      <p>A playbook is a list (<code>-</code>) of plays. Each play has three main sections: the <strong>header</strong> (who, how), <strong>tasks</strong> (what to do), and optionally <strong>handlers</strong> (what to do when notified).</p>
+
       <div class="code-block">
         <div class="code-label"><span class="lang">YAML</span><span>install-nginx.yml</span></div>
-        <pre><span class="cm">---
-# A playbook is a list of plays</span>
-- <span class="kw">name:</span> <span class="str">Install and start Nginx</span>          <span class="cm"># Play name</span>
-  <span class="kw">hosts:</span> webservers                         <span class="cm"># Target group/host</span>
-  <span class="kw">become:</span> <span class="num">true</span>                              <span class="cm"># Run as sudo</span>
-  <span class="kw">gather_facts:</span> <span class="num">true</span>                        <span class="cm"># Collect system info</span>
+        <pre><span class="cm">---</span>
+- <span class="kw">name:</span> <span class="str">Install and configure Nginx</span>      <span class="cm"># play name — shown in output</span>
+  <span class="kw">hosts:</span> webservers                       <span class="cm"># inventory group or host to target</span>
+  <span class="kw">become:</span> <span class="num">true</span>                            <span class="cm"># run tasks as sudo/root</span>
+  <span class="kw">gather_facts:</span> <span class="num">true</span>                      <span class="cm"># collect system info before tasks</span>
 
-  <span class="kw">tasks:</span>                                     <span class="cm"># List of tasks</span>
+  <span class="kw">vars:</span>                                    <span class="cm"># play-level variables</span>
+    <span class="kw">nginx_port:</span> <span class="num">80</span>
+
+  <span class="kw">tasks:</span>
 
     - <span class="kw">name:</span> <span class="str">Update apt cache</span>
       <span class="kw">apt:</span>
@@ -856,72 +860,223 @@ ansible all -m shell -a "free -m"</pre>
     - <span class="kw">name:</span> <span class="str">Install nginx</span>
       <span class="kw">apt:</span>
         <span class="kw">name:</span> nginx
-        <span class="kw">state:</span> present                        <span class="cm"># present | absent | latest</span>
+        <span class="kw">state:</span> present                      <span class="cm"># present | absent | latest</span>
 
-    - <span class="kw">name:</span> <span class="str">Start and enable nginx service</span>
+    - <span class="kw">name:</span> <span class="str">Deploy config from template</span>
+      <span class="kw">template:</span>
+        <span class="kw">src:</span> <span class="str">templates/nginx.conf.j2</span>
+        <span class="kw">dest:</span> <span class="str">/etc/nginx/nginx.conf</span>
+        <span class="kw">mode:</span> <span class="str">'0644'</span>
+      <span class="kw">notify:</span> Restart Nginx                 <span class="cm"># triggers handler only if changed</span>
+
+    - <span class="kw">name:</span> <span class="str">Ensure nginx is started and enabled</span>
       <span class="kw">service:</span>
         <span class="kw">name:</span> nginx
         <span class="kw">state:</span> started
         <span class="kw">enabled:</span> <span class="num">yes</span>
 
-    - <span class="kw">name:</span> <span class="str">Copy config file</span>
-      <span class="kw">copy:</span>
-        <span class="kw">src:</span> <span class="str">files/nginx.conf</span>
-        <span class="kw">dest:</span> <span class="str">/etc/nginx/nginx.conf</span>
-        <span class="kw">owner:</span> root
-        <span class="kw">group:</span> root
-        <span class="kw">mode:</span> <span class="str">'0644'</span>
-      <span class="kw">notify:</span> Restart Nginx                   <span class="cm"># Trigger handler</span>
-
-  <span class="kw">handlers:</span>
+  <span class="kw">handlers:</span>                               <span class="cm"># run once at end of play, only if notified</span>
     - <span class="kw">name:</span> <span class="str">Restart Nginx</span>
       <span class="kw">service:</span>
         <span class="kw">name:</span> nginx
         <span class="kw">state:</span> restarted</pre>
       </div>
 
-      <h3>Running Playbooks</h3>
+      <h3>Play-level keywords</h3>
+      <p>These go at the top of each play (same indent level as <code>hosts:</code>).</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Keyword</th><th>What it does</th></tr>
+          <tr><td><code>name</code></td><td>Human-readable label shown in output</td></tr>
+          <tr><td><code>hosts</code></td><td>Target group, host, or pattern from inventory (<code>all</code>, <code>webservers</code>, <code>web*</code>)</td></tr>
+          <tr><td><code>become</code></td><td>Enable privilege escalation (sudo) for all tasks in the play</td></tr>
+          <tr><td><code>become_user</code></td><td>User to escalate to (default: <code>root</code>)</td></tr>
+          <tr><td><code>gather_facts</code></td><td>Collect system facts before running tasks (default: <code>true</code>). Set <code>false</code> to speed up plays that don't need facts</td></tr>
+          <tr><td><code>vars</code></td><td>Define variables scoped to this play</td></tr>
+          <tr><td><code>vars_files</code></td><td>Load variables from external YAML files</td></tr>
+          <tr><td><code>roles</code></td><td>Apply one or more roles to the play's hosts</td></tr>
+          <tr><td><code>serial</code></td><td>Run the play on N hosts at a time (rolling update). E.g. <code>serial: 1</code> or <code>serial: "30%"</code></td></tr>
+          <tr><td><code>max_fail_percentage</code></td><td>Abort the play if more than N% of hosts fail</td></tr>
+          <tr><td><code>any_errors_fatal</code></td><td>Stop the entire play immediately if any host fails</td></tr>
+          <tr><td><code>environment</code></td><td>Set environment variables for all tasks in the play</td></tr>
+          <tr><td><code>tags</code></td><td>Tag the entire play so it can be selected or skipped with <code>--tags</code></td></tr>
+        </table>
+      </div>
+
+      <h3>Task-level keywords</h3>
+      <p>These go on individual tasks inside <code>tasks:</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Keyword</th><th>What it does</th></tr>
+          <tr><td><code>name</code></td><td>Label for the task shown in output — always write one</td></tr>
+          <tr><td><code>when</code></td><td>Conditional — task runs only if expression is true</td></tr>
+          <tr><td><code>loop</code></td><td>Iterate the task over a list; current item is <code>{{ item }}</code></td></tr>
+          <tr><td><code>register</code></td><td>Save the task result into a variable for later use</td></tr>
+          <tr><td><code>notify</code></td><td>Trigger a handler by name if the task reports <em>changed</em></td></tr>
+          <tr><td><code>tags</code></td><td>Assign tags so the task can be run or skipped selectively</td></tr>
+          <tr><td><code>become</code></td><td>Override privilege escalation for this specific task</td></tr>
+          <tr><td><code>ignore_errors</code></td><td>Continue the play even if this task fails</td></tr>
+          <tr><td><code>failed_when</code></td><td>Custom failure condition based on task output</td></tr>
+          <tr><td><code>changed_when</code></td><td>Custom changed condition — useful for <code>command</code>/<code>shell</code> tasks</td></tr>
+          <tr><td><code>delegate_to</code></td><td>Run this task on a different host than the current target</td></tr>
+          <tr><td><code>run_once</code></td><td>Run the task only once, on the first host in the batch</td></tr>
+          <tr><td><code>no_log</code></td><td>Suppress task output in logs (use for tasks handling secrets)</td></tr>
+        </table>
+      </div>
+
+      <h3>Multiple plays in one playbook</h3>
+      <p>A single playbook file can contain multiple plays targeting different host groups, running in order.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>site.yml</span></div>
+        <pre><span class="cm">---</span>
+<span class="cm"># Play 1 — configure database servers</span>
+- <span class="kw">name:</span> <span class="str">Configure DB servers</span>
+  <span class="kw">hosts:</span> dbservers
+  <span class="kw">become:</span> <span class="num">true</span>
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Install MySQL</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> mysql-server
+        <span class="kw">state:</span> present
+
+<span class="cm"># Play 2 — configure web servers (runs after Play 1 finishes)</span>
+- <span class="kw">name:</span> <span class="str">Configure web servers</span>
+  <span class="kw">hosts:</span> webservers
+  <span class="kw">become:</span> <span class="num">true</span>
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Install Nginx</span>
+      <span class="kw">apt:</span>
+        <span class="kw">name:</span> nginx
+        <span class="kw">state:</span> present</pre>
+      </div>
+
+      <h3>register &amp; debug — capturing task output</h3>
+      <p><code>register</code> saves a task's result into a variable. <code>debug</code> prints it. This is how you inspect output, use it in conditions, or pass it to later tasks.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Check disk usage</span>
+  <span class="kw">command:</span> df -h /
+  <span class="kw">register:</span> disk_result          <span class="cm"># save output into disk_result</span>
+
+- <span class="kw">name:</span> <span class="str">Print the output</span>
+  <span class="kw">debug:</span>
+    <span class="kw">var:</span> disk_result.stdout       <span class="cm"># .stdout, .stderr, .rc, .changed</span>
+
+- <span class="kw">name:</span> <span class="str">Fail if disk is critically full</span>
+  <span class="kw">fail:</span>
+    <span class="kw">msg:</span> <span class="str">"Disk critically full!"</span>
+  <span class="kw">when:</span> <span class="str">"'100%' in disk_result.stdout"</span></pre>
+      </div>
+
+      <h3>pre_tasks and post_tasks</h3>
+      <p><code>pre_tasks</code> run before roles and tasks. <code>post_tasks</code> run after everything else. Useful for health checks, notifications, or cleanup.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Deploy application</span>
+  <span class="kw">hosts:</span> webservers
+  <span class="kw">become:</span> <span class="num">true</span>
+
+  <span class="kw">pre_tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Notify deployment started</span>
+      <span class="kw">debug:</span>
+        <span class="kw">msg:</span> <span class="str">"Starting deploy on {{ inventory_hostname }}"</span>
+
+  <span class="kw">roles:</span>
+    - nginx
+    - app
+
+  <span class="kw">tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Run smoke test</span>
+      <span class="kw">uri:</span>
+        <span class="kw">url:</span> <span class="str">http://localhost/health</span>
+        <span class="kw">status_code:</span> <span class="num">200</span>
+
+  <span class="kw">post_tasks:</span>
+    - <span class="kw">name:</span> <span class="str">Notify deployment complete</span>
+      <span class="kw">debug:</span>
+        <span class="kw">msg:</span> <span class="str">"Deploy finished on {{ inventory_hostname }}"</span></pre>
+      </div>
+
+      <h3>Error handling — block / rescue / always</h3>
+      <p>Group tasks in a <code>block</code> to catch failures with <code>rescue</code> (like try/catch) and run cleanup with <code>always</code>.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Deploy with rollback on failure</span>
+  <span class="kw">block:</span>
+    - <span class="kw">name:</span> <span class="str">Run migrations</span>
+      <span class="kw">command:</span> ./migrate.sh
+
+    - <span class="kw">name:</span> <span class="str">Deploy app</span>
+      <span class="kw">command:</span> ./deploy.sh
+
+  <span class="kw">rescue:</span>                              <span class="cm"># runs if any task in block fails</span>
+    - <span class="kw">name:</span> <span class="str">Rollback</span>
+      <span class="kw">command:</span> ./rollback.sh
+
+  <span class="kw">always:</span>                              <span class="cm"># always runs regardless of success/failure</span>
+    - <span class="kw">name:</span> <span class="str">Clean up temp files</span>
+      <span class="kw">file:</span>
+        <span class="kw">path:</span> <span class="str">/tmp/deploy</span>
+        <span class="kw">state:</span> absent</pre>
+      </div>
+
+      <h3>Running playbooks</h3>
       <div class="code-block">
         <div class="code-label"><span class="lang">BASH</span></div>
         <pre><span class="cm"># Basic run</span>
 ansible-playbook -i inventory.ini playbook.yml
 
-<span class="cm"># Dry run (check mode — no changes)</span>
+<span class="cm"># Dry run — no changes made</span>
 ansible-playbook -i inventory.ini playbook.yml --check
 
-<span class="cm"># Run with verbose output</span>
+<span class="cm"># Dry run + show file diffs</span>
+ansible-playbook -i inventory.ini playbook.yml --check --diff
+
+<span class="cm"># Verbose output</span>
 ansible-playbook -i inventory.ini playbook.yml -v
 
-<span class="cm"># Limit to specific hosts</span>
+<span class="cm"># Limit to one host</span>
 ansible-playbook -i inventory.ini playbook.yml --limit web1
 
-<span class="cm"># Run specific tags</span>
+<span class="cm"># Run only tasks with a tag</span>
 ansible-playbook -i inventory.ini playbook.yml --tags install
 
-<span class="cm"># Skip specific tags</span>
-ansible-playbook -i inventory.ini playbook.yml --skip-tags debug</pre>
+<span class="cm"># Skip tasks with a tag</span>
+ansible-playbook -i inventory.ini playbook.yml --skip-tags debug
+
+<span class="cm"># Resume from a specific task</span>
+ansible-playbook -i inventory.ini playbook.yml --start-at-task "Deploy config"</pre>
       </div>
 
-      <h3>Common Modules Reference</h3>
+      <h3>Common modules reference</h3>
       <div class="table-wrap">
         <table>
-          <tr><th>Module</th><th>Purpose</th><th>Key Args</th></tr>
-          <tr><td><code>apt</code></td><td>Manage packages (Debian)</td><td>name, state, update_cache</td></tr>
-          <tr><td><code>yum / dnf</code></td><td>Manage packages (RHEL)</td><td>name, state</td></tr>
+          <tr><th>Module</th><th>Purpose</th><th>Key args</th></tr>
+          <tr><td><code>apt</code></td><td>Manage packages (Debian/Ubuntu)</td><td>name, state, update_cache</td></tr>
+          <tr><td><code>yum / dnf</code></td><td>Manage packages (RHEL/Amazon Linux)</td><td>name, state</td></tr>
           <tr><td><code>service</code></td><td>Manage services</td><td>name, state, enabled</td></tr>
-          <tr><td><code>copy</code></td><td>Copy files to remote</td><td>src, dest, owner, mode</td></tr>
-          <tr><td><code>template</code></td><td>Copy Jinja2 template</td><td>src, dest</td></tr>
-          <tr><td><code>file</code></td><td>Manage files/dirs</td><td>path, state, mode</td></tr>
-          <tr><td><code>user</code></td><td>Manage users</td><td>name, state, groups</td></tr>
-          <tr><td><code>command</code></td><td>Run command (no shell)</td><td>argv or free-form</td></tr>
-          <tr><td><code>shell</code></td><td>Run shell command</td><td>cmd, chdir</td></tr>
-          <tr><td><code>git</code></td><td>Manage git repos</td><td>repo, dest, version</td></tr>
-          <tr><td><code>debug</code></td><td>Print messages</td><td>msg, var</td></tr>
-          <tr><td><code>set_fact</code></td><td>Set custom facts/vars</td><td>key=value</td></tr>
-          <tr><td><code>pause</code></td><td>Pause playbook</td><td>seconds, prompt</td></tr>
-          <tr><td><code>wait_for</code></td><td>Wait for condition</td><td>port, host, timeout</td></tr>
-          <tr><td><code>include_tasks</code></td><td>Include another task file</td><td>file</td></tr>
+          <tr><td><code>copy</code></td><td>Copy a file to remote</td><td>src, dest, owner, mode</td></tr>
+          <tr><td><code>template</code></td><td>Render a Jinja2 template and copy</td><td>src, dest, mode</td></tr>
+          <tr><td><code>file</code></td><td>Manage files, dirs, symlinks</td><td>path, state, mode, owner</td></tr>
+          <tr><td><code>user</code></td><td>Manage user accounts</td><td>name, state, groups, shell</td></tr>
+          <tr><td><code>command</code></td><td>Run a command (no shell features)</td><td>free-form or argv</td></tr>
+          <tr><td><code>shell</code></td><td>Run a shell command (pipes, redirects OK)</td><td>cmd, chdir</td></tr>
+          <tr><td><code>git</code></td><td>Clone / update a git repo</td><td>repo, dest, version</td></tr>
+          <tr><td><code>uri</code></td><td>Make HTTP requests</td><td>url, method, status_code</td></tr>
+          <tr><td><code>debug</code></td><td>Print a message or variable</td><td>msg, var</td></tr>
+          <tr><td><code>set_fact</code></td><td>Set a variable dynamically</td><td>key: value</td></tr>
+          <tr><td><code>fail</code></td><td>Explicitly fail with a message</td><td>msg</td></tr>
+          <tr><td><code>pause</code></td><td>Pause execution</td><td>seconds, prompt</td></tr>
+          <tr><td><code>wait_for</code></td><td>Wait for a port or file condition</td><td>port, host, timeout, path</td></tr>
+          <tr><td><code>include_tasks</code></td><td>Dynamically include a task file</td><td>file</td></tr>
+          <tr><td><code>import_tasks</code></td><td>Statically import a task file</td><td>file</td></tr>
         </table>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 command vs shell</div>
+        Use <code>command</code> when you don't need shell features (safer, no injection risk).<br>
+        Use <code>shell</code> only when you need pipes (<code>|</code>), redirects (<code>&gt;</code>), or environment variable expansion.
       </div>
     </section>
 
