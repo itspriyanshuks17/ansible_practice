@@ -1955,65 +1955,84 @@ ansible -m ping all</pre>
         <span class="level-badge beginner">Beginner</span>
       </div>
 
+      <h3>Flags — the letters after <code>-</code></h3>
+      <p>These flags are used with <code>ansible</code> and <code>ansible-playbook</code>. Understanding each one is key to running commands confidently.</p>
+
+      <div class="table-wrap">
+        <table>
+          <tr><th>Flag</th><th>Long form</th><th>Used with</th><th>What it does</th></tr>
+          <tr><td><code>-i</code></td><td><code>--inventory</code></td><td>both</td><td>Path to inventory file or directory. Overrides <code>ansible.cfg</code>.<br><span style="color:var(--muted);font-size:12px">ansible -i hosts.ini all -m ping</span></td></tr>
+          <tr><td><code>-m</code></td><td><code>--module-name</code></td><td><code>ansible</code></td><td>Module to run on the managed nodes.<br><span style="color:var(--muted);font-size:12px">ansible all -m ping &nbsp;|&nbsp; ansible all -m shell</span></td></tr>
+          <tr><td><code>-a</code></td><td><code>--args</code></td><td><code>ansible</code></td><td>Arguments passed to the module.<br><span style="color:var(--muted);font-size:12px">ansible all -m command -a "uptime"</span></td></tr>
+          <tr><td><code>-e</code></td><td><code>--extra-vars</code></td><td>both</td><td>Pass variables at runtime. Highest precedence — overrides everything.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -e "env=prod port=9090"<br>ansible-playbook site.yml -e "@vars/prod.yml"</span></td></tr>
+          <tr><td><code>-b</code></td><td><code>--become</code></td><td>both</td><td>Enable privilege escalation (sudo). Runs tasks as root by default.<br><span style="color:var(--muted);font-size:12px">ansible all -m apt -a "name=nginx state=present" -b</span></td></tr>
+          <tr><td><code>-u</code></td><td><code>--user</code></td><td>both</td><td>SSH username to connect as. Overrides <code>remote_user</code> in <code>ansible.cfg</code>.<br><span style="color:var(--muted);font-size:12px">ansible all -u ubuntu -m ping</span></td></tr>
+          <tr><td><code>-k</code></td><td><code>--ask-pass</code></td><td>both</td><td>Prompt for SSH password instead of using a key.<br><span style="color:var(--muted);font-size:12px">ansible all -k -m ping</span></td></tr>
+          <tr><td><code>-K</code></td><td><code>--ask-become-pass</code></td><td>both</td><td>Prompt for the sudo/become password on the remote host.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -b -K</span></td></tr>
+          <tr><td><code>-v</code></td><td><code>--verbose</code></td><td>both</td><td>Increase output verbosity. Stack for more detail: <code>-v</code> → <code>-vv</code> → <code>-vvv</code> → <code>-vvvv</code> (connection debug).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -vvv</span></td></tr>
+          <tr><td><code>-l</code></td><td><code>--limit</code></td><td>both</td><td>Restrict the run to a subset of hosts or groups.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -l web1<br>ansible-playbook site.yml -l webservers</span></td></tr>
+          <tr><td><code>-t</code></td><td><code>--tags</code></td><td><code>ansible-playbook</code></td><td>Run only tasks that have the specified tag(s).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -t install,config</span></td></tr>
+          <tr><td><code>-C</code></td><td><code>--check</code></td><td><code>ansible-playbook</code></td><td>Dry-run mode — predicts changes without applying them.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -C</span></td></tr>
+          <tr><td><code>-D</code></td><td><code>--diff</code></td><td><code>ansible-playbook</code></td><td>Show a diff of file changes (works well with <code>-C</code>).<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -C -D</span></td></tr>
+          <tr><td><code>-f</code></td><td><code>--forks</code></td><td>both</td><td>Number of parallel processes (default: 5). Increase for large inventories.<br><span style="color:var(--muted);font-size:12px">ansible-playbook site.yml -f 20</span></td></tr>
+          <tr><td><code>-c</code></td><td><code>--connection</code></td><td>both</td><td>Connection type to use: <code>ssh</code> (default), <code>local</code>, <code>winrm</code>, <code>docker</code>.<br><span style="color:var(--muted);font-size:12px">ansible localhost -c local -m ping</span></td></tr>
+          <tr><td><code>-o</code></td><td><code>--one-line</code></td><td><code>ansible</code></td><td>Condense output to one line per host. Useful for quick status checks.<br><span style="color:var(--muted);font-size:12px">ansible all -m ping -o</span></td></tr>
+          <tr><td><code>-T</code></td><td><code>--timeout</code></td><td>both</td><td>SSH connection timeout in seconds (default: 10).<br><span style="color:var(--muted);font-size:12px">ansible all -T 30 -m ping</span></td></tr>
+          <tr><td><code>-U</code></td><td><code>--url</code></td><td><code>ansible-pull</code></td><td>Git repo URL to pull the playbook from.<br><span style="color:var(--muted);font-size:12px">ansible-pull -U https://github.com/org/repo.git site.yml</span></td></tr>
+        </table>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">💡 Case matters</div>
+        <code>-k</code> = ask SSH password &nbsp;|&nbsp; <code>-K</code> = ask sudo password<br>
+        <code>-c</code> = connection type &nbsp;|&nbsp; <code>-C</code> = check (dry-run)<br>
+        <code>-d</code> does not exist &nbsp;|&nbsp; <code>-D</code> = diff mode<br>
+        <code>-t</code> = tags &nbsp;|&nbsp; <code>-T</code> = timeout
+      </div>
+
+      <h3>Combining flags — real examples</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Dry-run with diff, verbose, limit to one host</span>
+ansible-playbook -i hosts.ini site.yml -C -D -v -l web1
+
+<span class="cm"># Override user + key + extra var at runtime</span>
+ansible-playbook -i hosts.ini site.yml -u ubuntu -e "env=staging" -b
+
+<span class="cm"># Run only 'deploy' tag on 20 parallel forks</span>
+ansible-playbook -i hosts.ini site.yml -t deploy -f 20
+
+<span class="cm"># Ad-hoc: install nginx as sudo, prompt for sudo password</span>
+ansible -i hosts.ini all -m apt -a "name=nginx state=present" -b -K
+
+<span class="cm"># One-line ping check across all hosts</span>
+ansible -i hosts.ini all -m ping -o</pre>
+      </div>
+
       <h3>Recommended workflow order</h3>
       <ol>
-        <li>Check inventory with <code>ansible-inventory</code></li>
-        <li>Check settings with <code>ansible-config</code></li>
-        <li>Read module docs with <code>ansible-doc</code></li>
-        <li>Test connectivity with <code>ansible -m ping</code></li>
-        <li>Run your playbook with <code>ansible-playbook</code></li>
-        <li>Protect secrets with <code>ansible-vault</code></li>
+        <li>Check inventory — <code>ansible-inventory -i hosts.ini --graph</code></li>
+        <li>Check active config — <code>ansible-config dump --only-changed</code></li>
+        <li>Read module docs — <code>ansible-doc &lt;module&gt;</code></li>
+        <li>Test connectivity — <code>ansible -i hosts.ini all -m ping -o</code></li>
+        <li>Dry-run playbook — <code>ansible-playbook site.yml -C -D</code></li>
+        <li>Run playbook — <code>ansible-playbook site.yml</code></li>
+        <li>Protect secrets — <code>ansible-vault create secrets.yml</code></li>
       </ol>
 
       <div class="table-wrap">
         <table>
-          <tr><th>Command</th><th>Purpose</th><th>Key Options</th></tr>
-          <tr><td><code>ansible</code></td><td>Ad-hoc tasks on managed nodes</td><td><code>-m</code> module, <code>-a</code> args, <code>-i</code> inventory, <code>-b</code> become</td></tr>
-          <tr><td><code>ansible-playbook</code></td><td>Run YAML playbooks</td><td><code>--check</code> dry-run, <code>--diff</code>, <code>--limit</code>, <code>--tags</code></td></tr>
-          <tr><td><code>ansible-inventory</code></td><td>Inspect inventory data</td><td><code>--list</code>, <code>--graph</code></td></tr>
-          <tr><td><code>ansible-config</code></td><td>Inspect Ansible config settings</td><td><code>view</code>, <code>dump --only-changed</code></td></tr>
-          <tr><td><code>ansible-doc</code></td><td>Read module/plugin docs</td><td><code>ansible-doc ping</code>, <code>-l</code> list all</td></tr>
-          <tr><td><code>ansible-galaxy</code></td><td>Manage roles and collections</td><td><code>collection install</code>, <code>role init</code></td></tr>
-          <tr><td><code>ansible-vault</code></td><td>Encrypt/manage secrets</td><td><code>create</code>, <code>edit</code>, <code>view</code>, <code>encrypt_string</code></td></tr>
-          <tr><td><code>ansible-pull</code></td><td>Pull playbook from git and run locally</td><td><code>-U &lt;repo-url&gt;</code></td></tr>
-          <tr><td><code>ansible-test</code></td><td>Test modules/collections (dev use)</td><td><code>sanity</code></td></tr>
+          <tr><th>Command</th><th>Purpose</th></tr>
+          <tr><td><code>ansible</code></td><td>Ad-hoc tasks on managed nodes</td></tr>
+          <tr><td><code>ansible-playbook</code></td><td>Run YAML playbooks</td></tr>
+          <tr><td><code>ansible-inventory</code></td><td>Inspect inventory — <code>--list</code>, <code>--graph</code></td></tr>
+          <tr><td><code>ansible-config</code></td><td>Inspect config — <code>view</code>, <code>dump --only-changed</code></td></tr>
+          <tr><td><code>ansible-doc</code></td><td>Read module docs — <code>ansible-doc ping</code>, <code>-l</code> list all</td></tr>
+          <tr><td><code>ansible-galaxy</code></td><td>Manage roles/collections — <code>collection install</code>, <code>role init</code></td></tr>
+          <tr><td><code>ansible-vault</code></td><td>Encrypt secrets — <code>create</code>, <code>edit</code>, <code>view</code>, <code>encrypt_string</code></td></tr>
+          <tr><td><code>ansible-pull</code></td><td>Pull playbook from git and run locally — <code>-U &lt;repo-url&gt;</code></td></tr>
+          <tr><td><code>ansible-test</code></td><td>Test modules/collections (dev) — <code>sanity</code></td></tr>
         </table>
-      </div>
-
-      <h3>Ad-hoc examples</h3>
-      <div class="code-block">
-        <div class="code-label"><span class="lang">BASH</span></div>
-        <pre><span class="cm"># Ping all hosts</span>
-ansible -i hosts.ini servers -m ping
-
-<span class="cm"># Run shell commands</span>
-ansible -i hosts.ini servers -m command -a "uptime"
-ansible -i hosts.ini servers -m shell -a "df -h"
-
-<span class="cm"># Inspect inventory</span>
-ansible-inventory -i hosts.ini --graph
-
-<span class="cm"># Check active config</span>
-ansible-config dump --only-changed
-
-<span class="cm"># Read module docs</span>
-ansible-doc copy</pre>
-      </div>
-
-      <h3>ansible-playbook options</h3>
-      <div class="code-block">
-        <div class="code-label"><span class="lang">BASH</span></div>
-        <pre><span class="cm"># Validate YAML structure</span>
-ansible-playbook -i hosts.ini playbook.yml --syntax-check
-
-<span class="cm"># Dry run</span>
-ansible-playbook -i hosts.ini playbook.yml --check
-
-<span class="cm"># Show file diffs</span>
-ansible-playbook -i hosts.ini playbook.yml --diff
-
-<span class="cm"># Limit to subset of hosts</span>
-ansible-playbook -i hosts.ini playbook.yml --limit servers</pre>
       </div>
     </section>
 
