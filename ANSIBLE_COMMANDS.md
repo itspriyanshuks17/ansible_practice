@@ -234,3 +234,40 @@ Notes:
 - For complex `-e` values use JSON or a file: `-e '{"var": "value"}'` or `-e @vars.yml`.
 
 If you'd like, I can move this section earlier in the file or expand entries with more examples.
+
+## 14. Playbooks
+
+Playbooks are YAML files that define one or more "plays" — a play maps a group of hosts to roles or tasks. Playbooks are the primary method for orchestrating complex, repeatable automation in Ansible.
+
+Key concepts:
+
+- **Play**: A mapping between hosts and the tasks to run on them (starts with `- hosts:`).
+- **Task**: An individual action that calls a module (e.g., `apt`, `service`, `template`).
+- **Handler**: A special task triggered by `notify:`; typically used for service restarts.
+- **Role**: A reusable collection of tasks, handlers, files, templates, and defaults.
+- **Variables**: Used to parametrize playbooks (`vars`, `vars_files`, `--extra-vars`).
+- **Become**: Privilege escalation (sudo) to run tasks that require root.
+- **Tags**: Mark tasks to run a subset with `--tags`.
+
+Basic run command:
+
+```
+ansible-playbook -i hosts.ini playbooks/install_nginx.yml
+```
+
+Playbook tips:
+
+- Use `--check` for dry runs and `--diff` to view file changes.
+- Prefer modules (`apt`, `service`, `copy`, `template`) over shell commands for idempotence.
+- Organize complex automation into roles for reuse and clarity.
+
+Inventory selection note:
+
+- Example: `ansible-playbook -i ../hosts.ini hello.yml` explicitly uses the inventory file at `../hosts.ini`.
+- Running `ansible-playbook hello.yml` without `-i` uses the inventory defined in `ansible.cfg`, the `ANSIBLE_INVENTORY`/`ANSIBLE_HOSTS` environment variable, or `/etc/ansible/hosts` (in that order of precedence).
+- The CLI `-i` option overrides any configuration or environment settings — use it for predictable runs.
+- Preview which hosts will be targeted with `--list-hosts`, e.g.: `ansible-playbook -i ../hosts.ini hello.yml --list-hosts`.
+
+Example playbook file: [playbooks/install_nginx.yml](playbooks/install_nginx.yml)
+
+Would you like additional example playbooks (users/roles, deploying an app, templates)?
