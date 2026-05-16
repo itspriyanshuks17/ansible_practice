@@ -235,6 +235,65 @@ Notes:
 
 If you'd like, I can move this section earlier in the file or expand entries with more examples.
 
+## setup (gather facts)
+
+The `setup` module collects system facts (hardware, network, OS, mounted filesystems, Python info, etc.) from target hosts and returns them as `ansible_facts`.
+
+Examples:
+
+```
+ansible -i ../hosts.ini servers -m setup
+ansible -i ../hosts.ini servers -m setup -a 'filter=ansible_default_ipv4'
+ansible -i ../hosts.ini servers -m setup --tree /tmp/facts
+```
+
+Notes:
+
+- Use `-a 'filter=...'` to limit which facts are returned (helps with large outputs).
+- `--tree` writes per-host JSON fact files to the given directory.
+- Facts require a Python interpreter on the remote host; set `ansible_python_interpreter` in inventory if needed.
+- Facts are accessible in playbooks as `{{ ansible_facts['ansible_default_ipv4']['address'] }}` or `{{ ansible_default_ipv4.address }}`.
+- Consider enabling fact caching in `ansible.cfg` for large inventories to avoid repeated gathering.
+
+This entry is useful when you need to inspect host capabilities before writing conditional tasks or templates.
+
+Common OS facts returned by `setup`
+
+When you run the `setup` module you often query specific keys. Example outputs and meanings:
+
+- `ansible_os_family`: "Debian"
+	- High-level family grouping (Debian, RedHat, Suse, etc.). Useful for selecting package modules and paths.
+
+- `ansible_distribution`: "Ubuntu"
+	- Distribution name (Ubuntu, CentOS, Debian). Use in conditionals: `when: ansible_distribution == 'Ubuntu'`.
+
+- `ansible_distribution_version` / `ansible_distribution_major_version`: "26.04" / "26"
+	- Exact release version and major version; useful for version-specific behavior.
+
+- `ansible_distribution_release`: "resolute"
+	- Distribution codename (if available) from files like `/etc/os-release`.
+
+- `ansible_distribution_file_parsed`: `true`
+	- Indicates Ansible successfully parsed an OS-release file; `ansible_distribution_file_path` shows the file path found (e.g., `/etc/os-release`).
+
+Example usage in a playbook:
+
+```yaml
+- name: Install package for Debian/Ubuntu
+	apt:
+		name: htop
+		state: present
+	when: ansible_os_family == 'Debian'
+```
+
+Or check exact release:
+
+```yaml
+when: ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 20
+```
+
+These facts let you write portable playbooks that adapt to the target OS and version.
+
 ## 14. Playbooks
 
 Playbooks are YAML files that define one or more "plays" — a play maps a group of hosts to roles or tasks. Playbooks are the primary method for orchestrating complex, repeatable automation in Ansible.
