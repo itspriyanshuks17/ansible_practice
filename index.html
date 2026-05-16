@@ -589,6 +589,7 @@
     <div class="sidebar-label">Playbooks</div>
     <a href="#pb-variables"><span class="num">P1</span> Variables</a>
     <a href="#pb-output"><span class="num">P2</span> Reading Output</a>
+    <a href="#pb-setup"><span class="num">P3</span> Setup Module</a>
   </nav>
 
   <!-- MAIN -->
@@ -2730,6 +2731,143 @@ worker-node-2   : ok=2  changed=1  unreachable=0  failed=0  skipped=0  rescued=0
           <tr><td><code>skipped</code></td><td>Cyan</td><td>Task was skipped due to <code>when:</code></td></tr>
           <tr><td><code>unreachable</code></td><td>Red</td><td>Host could not be reached over SSH</td></tr>
         </table>
+      </div>
+    </section>
+
+    </section>
+
+    <!-- P3: SETUP MODULE -->
+    <section class="section" id="pb-setup">
+      <div class="section-header">
+        <span class="section-num">PLAYBOOKS P3</span>
+        <span class="section-title">Setup Module &amp; Facts</span>
+        <span class="level-badge beginner">Beginner</span>
+      </div>
+
+      <p>The <code>setup</code> module collects system information from managed hosts called <strong>facts</strong>. Ansible runs it automatically at the start of every playbook (<code>gather_facts: true</code>). You can also run it manually as an ad-hoc command to inspect a host.</p>
+
+      <h3>The command</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre>ansible -i ../hosts.ini servers -m setup</pre>
+      </div>
+      <ul>
+        <li><code>ansible</code> &mdash; ad-hoc, no playbook needed</li>
+        <li><code>-i ../hosts.ini</code> &mdash; inventory one directory up</li>
+        <li><code>servers</code> &mdash; host group to target</li>
+        <li><code>-m setup</code> &mdash; run the setup module, dumps all facts as JSON</li>
+      </ul>
+
+      <div class="box box-info">
+        <div class="box-title">&#8505; The output is large</div>
+        A full <code>setup</code> run returns hundreds of facts per host. Pipe it through <code>grep</code> to find what you need, or use the <code>filter</code> argument to narrow it down.
+      </div>
+
+      <h3>Filtering with grep</h3>
+      <p>Pipe the output through <code>grep</code> to search for specific facts by name.</p>
+
+      <h3>Example 1 &mdash; grep for os_family</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Command</span></div>
+        <pre>ansible -i ../hosts.ini servers -m setup | grep "os_family"</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>        "ansible_os_family": "Debian",
+        "ansible_os_family": "Debian",</pre>
+      </div>
+      <ul>
+        <li>The result appears <strong>twice</strong> because there are two hosts in the <code>servers</code> group &mdash; <code>worker-node-1</code> and <code>worker-node-2</code>. Each host returns its own facts.</li>
+        <li><code>ansible_os_family: "Debian"</code> means both nodes are Debian-family systems. Ubuntu is part of the Debian family.</li>
+        <li>This fact is commonly used in playbooks with <code>when:</code> to run different tasks on Debian vs RedHat systems.</li>
+      </ul>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">YAML</span><span>Using os_family in a playbook</span></div>
+        <pre>- <span class="kw">name:</span> <span class="str">Install nginx on Debian family</span>
+  <span class="kw">apt:</span>
+    <span class="kw">name:</span> nginx
+    <span class="kw">state:</span> present
+  <span class="kw">when:</span> ansible_os_family == <span class="str">"Debian"</span>
+
+- <span class="kw">name:</span> <span class="str">Install nginx on RedHat family</span>
+  <span class="kw">yum:</span>
+    <span class="kw">name:</span> nginx
+    <span class="kw">state:</span> present
+  <span class="kw">when:</span> ansible_os_family == <span class="str">"RedHat"</span></pre>
+      </div>
+
+      <h3>Example 2 &mdash; grep for distribution</h3>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span><span>Command</span></div>
+        <pre>ansible -i ../hosts.ini servers -m setup | grep "distribution"</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">OUTPUT</span></div>
+        <pre>        "ansible_distribution": "Ubuntu",
+        "ansible_distribution_file_parsed": true,
+        "ansible_distribution_file_path": "/etc/os-release",
+        "ansible_distribution_file_variety": "Debian",
+        "ansible_distribution_major_version": "26",
+        "ansible_distribution_release": "resolute",
+        "ansible_distribution_version": "26.04",
+        "ansible_distribution": "Ubuntu",
+        ...</pre>
+      </div>
+
+      <p>Each field explained:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Fact</th><th>Your value</th><th>What it means</th></tr>
+          <tr><td><code>ansible_distribution</code></td><td><code>Ubuntu</code></td><td>The specific Linux distribution name</td></tr>
+          <tr><td><code>ansible_distribution_file_parsed</code></td><td><code>true</code></td><td>Ansible successfully read and parsed the OS release file</td></tr>
+          <tr><td><code>ansible_distribution_file_path</code></td><td><code>/etc/os-release</code></td><td>The file Ansible read to determine the distribution &mdash; standard on all modern Linux systems</td></tr>
+          <tr><td><code>ansible_distribution_file_variety</code></td><td><code>Debian</code></td><td>The upstream family the distro belongs to. Ubuntu is based on Debian</td></tr>
+          <tr><td><code>ansible_distribution_major_version</code></td><td><code>26</code></td><td>The major version number only &mdash; useful for broad version checks</td></tr>
+          <tr><td><code>ansible_distribution_release</code></td><td><code>resolute</code></td><td>The Ubuntu release codename. Ubuntu 26.04 is codenamed <em>Resolute</em></td></tr>
+          <tr><td><code>ansible_distribution_version</code></td><td><code>26.04</code></td><td>Full version string &mdash; major.minor</td></tr>
+        </table>
+      </div>
+
+      <p>Again the output repeats twice &mdash; once per host. Both nodes are running the same OS version.</p>
+
+      <h3>Filtering with the filter argument instead of grep</h3>
+      <p>Cleaner than grep &mdash; returns only matching facts, still in JSON format, one host at a time.</p>
+      <div class="code-block">
+        <div class="code-label"><span class="lang">BASH</span></div>
+        <pre><span class="cm"># Only distribution facts</span>
+ansible -i ../hosts.ini servers -m setup -a "filter=ansible_distribution*"
+
+<span class="cm"># Only network facts</span>
+ansible -i ../hosts.ini servers -m setup -a "filter=ansible_default_ipv4"
+
+<span class="cm"># Only memory facts</span>
+ansible -i ../hosts.ini servers -m setup -a "filter=ansible_mem*"
+
+<span class="cm"># Only CPU facts</span>
+ansible -i ../hosts.ini servers -m setup -a "filter=ansible_processor*"</pre>
+      </div>
+
+      <h3>Most useful facts reference</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Fact</th><th>Example value</th><th>Common use</th></tr>
+          <tr><td><code>ansible_os_family</code></td><td><code>Debian</code></td><td>Choose apt vs yum in tasks</td></tr>
+          <tr><td><code>ansible_distribution</code></td><td><code>Ubuntu</code></td><td>OS-specific task conditions</td></tr>
+          <tr><td><code>ansible_distribution_version</code></td><td><code>26.04</code></td><td>Version-specific logic</td></tr>
+          <tr><td><code>ansible_distribution_release</code></td><td><code>resolute</code></td><td>Codename-based repo configs</td></tr>
+          <tr><td><code>ansible_hostname</code></td><td><code>worker-node-1</code></td><td>Dynamic config file content</td></tr>
+          <tr><td><code>ansible_default_ipv4.address</code></td><td><code>10.0.1.10</code></td><td>Templates, firewall rules</td></tr>
+          <tr><td><code>ansible_memtotal_mb</code></td><td><code>983</code></td><td>Conditional resource allocation</td></tr>
+          <tr><td><code>ansible_processor_vcpus</code></td><td><code>1</code></td><td>Set worker thread counts</td></tr>
+          <tr><td><code>ansible_architecture</code></td><td><code>x86_64</code></td><td>Download correct binary arch</td></tr>
+          <tr><td><code>ansible_env.HOME</code></td><td><code>/home/ubuntu</code></td><td>Dynamic path construction</td></tr>
+        </table>
+      </div>
+
+      <div class="box box-tip">
+        <div class="box-title">&#128161; os_family vs distribution</div>
+        Use <code>ansible_os_family</code> when you want broad checks &mdash; <code>"Debian"</code> covers Ubuntu, Debian, Mint, etc.<br>
+        Use <code>ansible_distribution</code> when you need to target a specific distro &mdash; <code>"Ubuntu"</code> only matches Ubuntu.
       </div>
     </section>
 
