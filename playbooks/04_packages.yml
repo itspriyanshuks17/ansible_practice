@@ -1,0 +1,10 @@
+- name: Install Packages
+  hosts: servers
+  become: true
+
+  tasks:
+    - name: Install Package
+      apt:
+        name: tree
+        state: present
+        force: yes
